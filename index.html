@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>学習ノート</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root{
+  --paper:#EDEFE5;
+  --paper-2:#F5F6EF;
+  --line:rgba(43,58,103,0.14);
+  --margin-red:#C1440E;
+  --ink:#2A2823;
+  --ink-soft:#6B6759;
+  --indigo:#2B3A67;
+  --indigo-l:#4C5E96;
+  --sienna:#C1440E;
+  --forest:#3F6C51;
+  --gold:#B98900;
+  --plum:#7B4B94;
+  --teal:#1F7A6C;
+  --rose:#A2475A;
+  --tab-w:196px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  color:var(--ink);
+  background:var(--paper);
+  min-height:100vh;
+}
+.app{
+  display:flex;
+  min-height:100vh;
+}
+
+/* ---- Tabs (index dividers) ---- */
+.tabs{
+  width:var(--tab-w);
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:28px 0 28px 18px;
+}
+.tabs h1{
+  font-family:'Shippori Mincho',serif;
+  font-size:20px;
+  font-weight:700;
+  color:var(--indigo);
+  margin:0 0 14px 4px;
+  letter-spacing:.03em;
+}
+.tab-btn{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:14px 16px;
+  border:none;
+  background:#E2DFCF;
+  color:var(--ink-soft);
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  font-weight:700;
+  font-size:14.5px;
+  border-radius:10px 0 0 10px;
+  cursor:pointer;
+  text-align:left;
+  box-shadow:0 1px 2px rgba(0,0,0,0.06);
+  transition:transform .15s ease, background .15s ease;
+}
+.tab-btn:hover{ transform:translateX(-3px); }
+.tab-btn .dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.tab-btn[data-tab="timer"] .dot{ background:var(--indigo); }
+.tab-btn[data-tab="progress"] .dot{ background:var(--forest); }
+.tab-btn[data-tab="goals"] .dot{ background:var(--plum); }
+.tab-btn[data-tab="cards"] .dot{ background:var(--teal); }
+.tab-btn[data-tab="reflect"] .dot{ background:var(--rose); }
+.tab-btn[data-tab="schedule"] .dot{ background:var(--sienna); }
+.tab-btn[data-tab="settings"] .dot{ background:var(--gold); }
+.tab-btn.active{
+  background:var(--paper-2);
+  color:var(--ink);
+  transform:translateX(-8px);
+  box-shadow:-2px 2px 6px rgba(0,0,0,0.10);
+}
+
+/* ---- Main notebook panel ---- */
+.panel{
+  flex:1;
+  background:var(--paper-2);
+  margin:20px 20px 20px 0;
+  border-radius:14px;
+  box-shadow:0 4px 22px rgba(43,38,25,0.10);
+  position:relative;
+  padding:38px 40px 48px 64px;
+  background-image:
+    repeating-linear-gradient(var(--paper-2) 0 31px, var(--line) 31px 32px);
+  background-position:0 90px;
+}
+.panel::before{
+  content:"";
+  position:absolute;
+  top:0; bottom:0; left:40px;
+  width:1px;
+  background:var(--margin-red);
+  opacity:.35;
+}
+.tape{
+  display:inline-block;
+  font-family:'Shippori Mincho',serif;
+  font-weight:700;
+  font-size:26px;
+  color:var(--ink);
+  background:linear-gradient(100deg, transparent 0%, rgba(255,255,255,.5) 40%, transparent 100%), #E9E4C9;
+  padding:6px 22px;
+  transform:rotate(-1.2deg);
+  box-shadow:0 2px 4px rgba(0,0,0,0.08);
+  margin-bottom:26px;
+}
+.sub{ color:var(--ink-soft); font-size:13.5px; margin:-16px 0 26px 4px; }
+
+.section{ display:none; }
+.section.active{ display:block; }
+
+/* ---- Timer ---- */
+.timer-card{
+  display:flex; flex-wrap:wrap; gap:32px; align-items:center;
+  background:var(--paper);
+  border-radius:12px;
+  padding:28px 32px;
+  border:1px solid var(--line);
+}
+.timer-display{
+  font-family:'JetBrains Mono',monospace;
+  font-size:56px;
+  font-weight:700;
+  color:var(--indigo);
+  letter-spacing:.02em;
+  min-width:230px;
+}
+.timer-controls{ display:flex; flex-direction:column; gap:14px; flex:1; min-width:220px; }
+.field-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+select, input[type=text], input[type=number], input[type=date], input[type=email]{
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  font-size:14px;
+  padding:9px 12px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:var(--ink);
+}
+.btn{
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  font-weight:700;
+  font-size:14px;
+  padding:10px 20px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  transition:filter .15s ease, transform .1s ease;
+}
+.btn:active{ transform:scale(.97); }
+.btn-start{ background:var(--indigo); color:#fff; }
+.btn-pause{ background:var(--gold); color:#fff; }
+.btn-stop{ background:var(--sienna); color:#fff; }
+.btn-ghost{ background:transparent; color:var(--indigo); border:1px solid var(--indigo-l); }
+.btn:hover{ filter:brightness(1.08); }
+.btn:disabled{ opacity:.4; cursor:not-allowed; }
+
+.today-strip{ display:flex; gap:24px; margin-top:24px; flex-wrap:wrap; }
+.stat-box{
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px 20px;
+  min-width:130px;
+}
+.stat-box .num{ font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--forest); }
+.stat-box .label{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+
+/* ---- Progress ---- */
+.chart-wrap{
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:24px 26px;
+}
+.chart-title{ font-weight:700; font-size:14px; margin-bottom:16px; color:var(--indigo); }
+.bars{ display:flex; align-items:flex-end; gap:14px; height:160px; }
+.bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+.bar-stack{ width:70%; display:flex; flex-direction:column-reverse; border-radius:4px 4px 0 0; overflow:hidden; }
+.bar-seg{ width:100%; }
+.bar-col .day-label{ font-size:11.5px; color:var(--ink-soft); margin-top:8px; }
+.bar-col .day-total{ font-size:11px; color:var(--ink); font-family:'JetBrains Mono',monospace; margin-bottom:4px; }
+
+.subject-list{ margin-top:22px; display:flex; flex-direction:column; gap:10px; }
+.subject-row{ display:flex; align-items:center; gap:12px; }
+.subject-row .name{ width:100px; font-size:13.5px; font-weight:700; flex-shrink:0; }
+.subject-row .track{ flex:1; height:12px; background:var(--paper); border-radius:6px; overflow:hidden; border:1px solid var(--line); }
+.subject-row .fill{ height:100%; border-radius:6px; }
+.subject-row .val{ font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--ink-soft); width:70px; text-align:right; flex-shrink:0; }
+
+.log-title{ font-weight:700; font-size:14px; margin:28px 0 12px; color:var(--indigo); }
+.log-item{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 14px; background:var(--paper); border-radius:8px; margin-bottom:6px; font-size:13px;
+  border-left:4px solid var(--indigo);
+}
+.log-item .left{ display:flex; gap:10px; align-items:center; }
+.log-item .del{ background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:15px; }
+.log-item .del:hover{ color:var(--sienna); }
+.empty{ color:var(--ink-soft); font-size:13.5px; padding:16px 0; }
+
+/* ---- Schedule ---- */
+.add-form{
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:24px;
+}
+.add-form input[type=text]{ flex:1; min-width:160px; }
+.day-group{ margin-bottom:22px; }
+.day-group .day-head{
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px;
+  color:#fff; background:var(--sienna); display:inline-block; padding:4px 12px; border-radius:6px; margin-bottom:10px;
+}
+.day-group.overdue .day-head{ background:var(--ink-soft); }
+.task-item{
+  display:flex; align-items:center; gap:12px;
+  background:var(--paper); border-radius:8px; padding:11px 14px; margin-bottom:6px;
+}
+.task-item.done{ opacity:.5; }
+.task-item.done .title{ text-decoration:line-through; }
+.task-item .chip{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.task-item .title{ flex:1; font-size:13.5px; }
+.task-item .del{ background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:15px; }
+.task-item .del:hover{ color:var(--sienna); }
+input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); cursor:pointer; }
+
+/* ---- Settings ---- */
+.settings-block{ margin-bottom:34px; }
+.settings-block h3{ font-size:14.5px; color:var(--indigo); margin:0 0 12px; }
+.subject-edit-row{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.swatch{ width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; flex-shrink:0; }
+.swatch.selected{ border-color:var(--ink); }
+.palette{ display:flex; gap:8px; }
+.danger-zone{ border:1px solid var(--sienna); border-radius:10px; padding:16px 20px; background:rgba(193,68,14,0.05); }
+.danger-zone p{ font-size:12.5px; color:var(--ink-soft); margin:0 0 10px; }
+
+/* ---- Goals ---- */
+.goal-card{
+  display:flex; gap:22px; align-items:center; flex-wrap:wrap;
+  background:var(--paper); border:1px solid var(--line); border-radius:12px;
+  padding:20px 22px; margin-bottom:16px;
+}
+.pie{
+  width:88px; height:88px; border-radius:50%; flex-shrink:0; position:relative;
+}
+.pie .pie-inner{
+  position:absolute; top:10px; left:10px; width:68px; height:68px; border-radius:50%;
+  background:var(--paper); display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px; color:var(--ink);
+}
+.goal-info{ flex:1; min-width:180px; }
+.goal-info .g-title{ font-weight:700; font-size:15px; margin-bottom:4px; }
+.goal-info .g-meta{ font-size:12.5px; color:var(--ink-soft); }
+.goal-info .g-meta.overdue{ color:var(--sienna); font-weight:700; }
+.goal-record{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.goal-record input[type=number]{ width:90px; }
+.goal-del{ background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:16px; align-self:flex-start; }
+.goal-del:hover{ color:var(--sienna); }
+
+/* ---- Mail box ---- */
+.mail-box{
+  background:var(--paper); border:1px solid var(--line); border-radius:12px;
+  padding:18px 20px; margin-bottom:24px;
+}
+.mail-box h3{ font-size:14px; color:var(--indigo); margin:0 0 12px; }
+.mail-box input[type=email]{ flex:1; min-width:200px; }
+.mail-box .note{ font-size:12px; color:var(--ink-soft); margin-top:8px; }
+
+/* ---- Heatmap ---- */
+.heatmap-wrap{ margin-top:26px; }
+.hm-cols{ display:flex; gap:3px; overflow-x:auto; padding-bottom:6px; }
+.hm-col{ display:flex; flex-direction:column; gap:3px; }
+.hm-cell{ width:12px; height:12px; border-radius:3px; background:var(--paper); border:1px solid var(--line); }
+.hm-cell.blank{ border:none; background:transparent; }
+.hm-cell.lvl1{ background:rgba(63,108,81,0.28); border-color:transparent; }
+.hm-cell.lvl2{ background:rgba(63,108,81,0.52); border-color:transparent; }
+.hm-cell.lvl3{ background:rgba(63,108,81,0.76); border-color:transparent; }
+.hm-cell.lvl4{ background:var(--forest); border-color:transparent; }
+.hm-legend{ display:flex; align-items:center; gap:5px; margin-top:10px; font-size:11.5px; color:var(--ink-soft); }
+.hm-legend .hm-cell{ width:11px; height:11px; }
+
+/* ---- Celebration ---- */
+.celebrate-overlay{
+  position:fixed; inset:0; pointer-events:none; z-index:9999;
+  display:flex; align-items:center; justify-content:center;
+}
+.celebrate-msg{
+  font-family:'Shippori Mincho',serif; font-weight:700; font-size:26px; color:var(--indigo);
+  background:var(--paper-2); padding:18px 34px; border-radius:14px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.18);
+  opacity:0; transform:translateY(10px) scale(.95);
+  animation:msgPop .35s ease forwards, msgOut .4s ease 2.1s forwards;
+}
+@keyframes msgPop{ to{ opacity:1; transform:translateY(0) scale(1); } }
+@keyframes msgOut{ to{ opacity:0; transform:translateY(-8px) scale(.97); } }
+.confetti-piece{
+  position:absolute; top:-20px; width:9px; height:9px;
+  animation-name:confettiFall; animation-timing-function:ease-in; animation-fill-mode:forwards;
+}
+@keyframes confettiFall{
+  to{ transform:translateY(100vh) rotate(540deg); opacity:.2; }
+}
+
+.loading{ padding:60px; text-align:center; color:var(--ink-soft); font-size:14px; }
+
+/* ---- Flashcards ---- */
+.flash-card{ perspective:1200px; width:100%; max-width:420px; height:210px; margin:0 auto 18px; cursor:pointer; }
+.flash-card-inner{ position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; }
+.flash-card.flipped .flash-card-inner{ transform:rotateY(180deg); }
+.flash-face{
+  position:absolute; inset:0; backface-visibility:hidden; border-radius:14px;
+  display:flex; align-items:center; justify-content:center; padding:24px; text-align:center;
+  font-size:21px; font-weight:700; box-shadow:0 4px 14px rgba(0,0,0,0.10);
+}
+.flash-front{ background:var(--paper-2); color:var(--indigo); border:1px solid var(--line); }
+.flash-back{ background:var(--indigo); color:#fff; transform:rotateY(180deg); }
+.flash-controls{ display:flex; justify-content:center; gap:14px; margin-bottom:4px; }
+.flash-progress{ text-align:center; color:var(--ink-soft); font-size:12.5px; margin-bottom:18px; }
+.card-item{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 14px; background:var(--paper); border-radius:8px; margin-bottom:6px; font-size:13px;
+}
+.badge{ font-size:11px; padding:2px 9px; border-radius:10px; flex-shrink:0; }
+.badge.memo{ background:rgba(63,108,81,0.18); color:var(--forest); }
+.badge.pending{ background:rgba(184,137,0,0.18); color:var(--gold); }
+
+/* ---- Reflect (diary / class review) ---- */
+textarea{
+  font-family:'Zen Kaku Gothic New',sans-serif; font-size:14px; padding:10px 12px;
+  border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink);
+  width:100%; resize:vertical; min-height:76px;
+}
+.reflect-item{ background:var(--paper); border-radius:10px; padding:14px 16px; margin-bottom:10px; }
+.reflect-item .r-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.reflect-item .r-head-left{ display:flex; align-items:center; gap:10px; }
+.reflect-item .r-date{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink-soft); }
+.r-badge{ font-size:11px; padding:2px 9px; border-radius:10px; }
+.r-badge.diary{ background:rgba(184,137,0,0.18); color:var(--gold); }
+.r-badge.class{ background:rgba(31,122,108,0.18); color:var(--teal); }
+.reflect-item .r-content{ font-size:13.5px; white-space:pre-wrap; line-height:1.65; }
+.reflect-item .r-meta{ font-size:12px; color:var(--ink-soft); margin-top:8px; }
+.reflect-item .del{ background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:15px; }
+.reflect-item .del:hover{ color:var(--sienna); }
+
+@media (max-width: 760px){
+  .app{ flex-direction:column; }
+  .tabs{ flex-direction:row; width:100%; padding:14px; gap:8px; overflow-x:auto; }
+  .tabs h1{ display:none; }
+  .tab-btn{ border-radius:10px; white-space:nowrap; }
+  .tab-btn.active{ transform:translateY(-3px); }
+  .panel{ margin:0 14px 14px; padding:26px 20px 34px 34px; }
+  .timer-display{ font-size:42px; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="loading" id="loading">読み込み中…</div>
+</div>
+
+<script>
+(function(){
+
+const SUBJECT_COLORS = [
+  {name:'藍', hex:'#2B3A67'},
+  {name:'朱', hex:'#C1440E'},
+  {name:'緑', hex:'#3F6C51'},
+  {name:'金', hex:'#B98900'},
+  {name:'紫', hex:'#7B4B94'},
+  {name:'青緑', hex:'#1F7A6C'},
+];
+
+let subjects = [];
+let sessions = [];   // {id, subjectId, date:'YYYY-MM-DD', durationSec, createdAt}
+let schedule = [];   // {id, date, subjectId, title, done}
+let goals = [];       // {id, title, targetAmount, unit, deadline, subjectId}
+let goalLogs = [];    // {id, goalId, amount, date}
+let flashcards = [];  // {id, term, meaning, subjectId, memorized, createdAt}
+let cardState = { idx:0, flipped:false };
+let reflections = []; // {id, type:'diary'|'class', date, mood, subjectId, understanding, content, createdAt}
+let settings = { dailyGoalMinutes: 60, lastRecipientEmail: '' };
+
+let timerState = { running:false, startedAt:null, elapsedMs:0, subjectId:null };
+let timerInterval = null;
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function calcStreak(){
+  const datesWithStudy = new Set(sessions.filter(s=>s.durationSec>0).map(s=>s.date));
+  const cursor = new Date(todayStr()+'T00:00:00');
+  if(!datesWithStudy.has(todayStr())) cursor.setDate(cursor.getDate()-1);
+  let streak = 0;
+  while(datesWithStudy.has(cursor.toISOString().slice(0,10))){
+    streak++;
+    cursor.setDate(cursor.getDate()-1);
+  }
+  return streak;
+}
+
+const CONFETTI_COLORS = ['#2B3A67','#C1440E','#3F6C51','#B98900','#7B4B94','#1F7A6C'];
+function celebrate(message){
+  const overlay = document.createElement('div');
+  overlay.className = 'celebrate-overlay';
+  for(let i=0;i<28;i++){
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const left = Math.random()*100;
+    const dur = 1.6 + Math.random()*1.2;
+    const delay = Math.random()*0.3;
+    const color = CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
+    const round = Math.random()>0.5 ? '50%' : '2px';
+    piece.style.cssText = `left:${left}%;background:${color};border-radius:${round};animation-duration:${dur}s;animation-delay:${delay}s;`;
+    overlay.appendChild(piece);
+  }
+  const msg = document.createElement('div');
+  msg.className = 'celebrate-msg';
+  msg.textContent = message;
+  overlay.appendChild(msg);
+  document.body.appendChild(overlay);
+  setTimeout(()=>overlay.remove(), 2600);
+}
+
+async function loadKey(key, def){
+  try{
+    const raw = localStorage.getItem(key);
+    return raw !== null ? JSON.parse(raw) : def;
+  }catch(e){ return def; }
+}
+async function saveKey(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); }
+  catch(e){ console.error('save failed', key, e); }
+}
+
+async function loadAll(){
+  subjects = await loadKey('subjects', [
+    {id:uid(), name:'数学', color:SUBJECT_COLORS[0].hex},
+    {id:uid(), name:'英語', color:SUBJECT_COLORS[1].hex},
+    {id:uid(), name:'理科', color:SUBJECT_COLORS[2].hex},
+  ]);
+  sessions = await loadKey('sessions', []);
+  schedule = await loadKey('schedule', []);
+  goals = await loadKey('goals', []);
+  goalLogs = await loadKey('goalLogs', []);
+  flashcards = await loadKey('flashcards', []);
+  reflections = await loadKey('reflections', []);
+  settings = await loadKey('settings', {dailyGoalMinutes:60, lastRecipientEmail:''});
+}
+
+function subjectById(id){ return subjects.find(s=>s.id===id); }
+
+/* ---------------- Rendering shell ---------------- */
+function renderShell(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="tabs">
+      <h1>学習ノート</h1>
+      <button class="tab-btn active" data-tab="timer"><span class="dot"></span>タイマー</button>
+      <button class="tab-btn" data-tab="progress"><span class="dot"></span>進捗</button>
+      <button class="tab-btn" data-tab="goals"><span class="dot"></span>目標</button>
+      <button class="tab-btn" data-tab="cards"><span class="dot"></span>単語帳</button>
+      <button class="tab-btn" data-tab="reflect"><span class="dot"></span>振り返り</button>
+      <button class="tab-btn" data-tab="schedule"><span class="dot"></span>予定</button>
+      <button class="tab-btn" data-tab="settings"><span class="dot"></span>設定</button>
+    </div>
+    <div class="panel">
+      <div class="section active" id="sec-timer"></div>
+      <div class="section" id="sec-progress"></div>
+      <div class="section" id="sec-goals"></div>
+      <div class="section" id="sec-cards"></div>
+      <div class="section" id="sec-reflect"></div>
+      <div class="section" id="sec-schedule"></div>
+      <div class="section" id="sec-settings"></div>
+    </div>
+  `;
+  app.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      app.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      app.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('sec-'+btn.dataset.tab).classList.add('active');
+      if(btn.dataset.tab==='progress') renderProgress();
+      if(btn.dataset.tab==='goals') renderGoals();
+      if(btn.dataset.tab==='cards') renderCards();
+      if(btn.dataset.tab==='reflect') renderReflect();
+      if(btn.dataset.tab==='schedule') renderSchedule();
+      if(btn.dataset.tab==='settings') renderSettings();
+    });
+  });
+}
+
+/* ---------------- Timer ---------------- */
+function fmtHMS(ms){
+  const totalSec = Math.floor(ms/1000);
+  const h = Math.floor(totalSec/3600);
+  const m = Math.floor((totalSec%3600)/60);
+  const s = totalSec%60;
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function renderTimer(){
+  const sec = document.getElementById('sec-timer');
+  const options = subjects.map(s=>`<option value="${s.id}" ${s.id===timerState.subjectId?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+  const todaySessions = sessions.filter(s=>s.date===todayStr());
+  const todaySec = todaySessions.reduce((a,s)=>a+s.durationSec,0);
+  const goalSec = (settings.dailyGoalMinutes||0)*60;
+  const pct = goalSec>0 ? Math.min(100, Math.round(todaySec/goalSec*100)) : 0;
+  const streak = calcStreak();
+
+  sec.innerHTML = `
+    <div class="tape">今日の学習</div>
+    <div class="sub">科目を選んでタイマーを開始しましょう</div>
+    <div class="timer-card">
+      <div class="timer-display" id="timerDisplay">${fmtHMS(timerState.elapsedMs)}</div>
+      <div class="timer-controls">
+        <div class="field-row">
+          <select id="subjectSelect" ${subjects.length===0?'disabled':''}>${options || '<option>科目を追加してください</option>'}</select>
+        </div>
+        <div class="field-row">
+          <button class="btn btn-start" id="btnStart" ${subjects.length===0?'disabled':''}>${timerState.running?'再開':'開始'}</button>
+          <button class="btn btn-pause" id="btnPause" ${!timerState.running?'disabled':''}>一時停止</button>
+          <button class="btn btn-stop" id="btnStop" ${timerState.elapsedMs===0?'disabled':''}>終了して記録</button>
+        </div>
+      </div>
+    </div>
+    <div class="today-strip">
+      <div class="stat-box"><div class="num">${Math.round(todaySec/60)}分</div><div class="label">今日の合計</div></div>
+      <div class="stat-box"><div class="num">${pct}%</div><div class="label">目標(${settings.dailyGoalMinutes}分)達成率</div></div>
+      <div class="stat-box"><div class="num">${todaySessions.length}</div><div class="label">今日のセッション数</div></div>
+      <div class="stat-box"><div class="num">🔥 ${streak}</div><div class="label">連続学習日数</div></div>
+    </div>
+  `;
+
+  document.getElementById('subjectSelect').addEventListener('change', e=>{
+    timerState.subjectId = e.target.value;
+  });
+  document.getElementById('btnStart').addEventListener('click', startTimer);
+  document.getElementById('btnPause').addEventListener('click', pauseTimer);
+  document.getElementById('btnStop').addEventListener('click', stopTimer);
+}
+
+function startTimer(){
+  if(subjects.length===0) return;
+  if(!timerState.subjectId) timerState.subjectId = subjects[0].id;
+  timerState.running = true;
+  timerState.startedAt = Date.now() - timerState.elapsedMs;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    timerState.elapsedMs = Date.now() - timerState.startedAt;
+    const disp = document.getElementById('timerDisplay');
+    if(disp) disp.textContent = fmtHMS(timerState.elapsedMs);
+  }, 1000);
+  renderTimer();
+}
+function pauseTimer(){
+  timerState.running = false;
+  clearInterval(timerInterval);
+  renderTimer();
+}
+async function stopTimer(){
+  clearInterval(timerInterval);
+  const durationSec = Math.round(timerState.elapsedMs/1000);
+  if(durationSec > 0 && timerState.subjectId){
+    const beforeSec = sessions.filter(s=>s.date===todayStr()).reduce((a,s)=>a+s.durationSec,0);
+    sessions.push({id:uid(), subjectId:timerState.subjectId, date:todayStr(), durationSec, createdAt:Date.now()});
+    await saveKey('sessions', sessions);
+    const goalSec = (settings.dailyGoalMinutes||0)*60;
+    const afterSec = beforeSec + durationSec;
+    if(goalSec>0 && beforeSec<goalSec && afterSec>=goalSec){
+      celebrate('🎉 今日の目標を達成しました！');
+    }
+  }
+  timerState = { running:false, startedAt:null, elapsedMs:0, subjectId:timerState.subjectId };
+  renderTimer();
+}
+
+/* ---------------- Progress ---------------- */
+function getLevel(sec, goalSec){
+  if(sec<=0) return 0;
+  const ratio = goalSec>0 ? sec/goalSec : sec/1800;
+  if(ratio>=1) return 4;
+  if(ratio>=0.66) return 3;
+  if(ratio>=0.33) return 2;
+  return 1;
+}
+function buildHeatmapHtml(weeks){
+  const dateSec = {};
+  sessions.forEach(s=>{ dateSec[s.date] = (dateSec[s.date]||0) + s.durationSec; });
+  const goalSec = (settings.dailyGoalMinutes||0)*60;
+  const totalDays = weeks*7;
+  const end = new Date(todayStr()+'T00:00:00');
+  const days = [];
+  for(let i=totalDays-1;i>=0;i--){
+    const d = new Date(end); d.setDate(d.getDate()-i);
+    days.push(d.toISOString().slice(0,10));
+  }
+  const firstDow = new Date(days[0]+'T00:00:00').getDay();
+  const padded = Array(firstDow).fill(null).concat(days);
+  const cols = [];
+  for(let i=0;i<padded.length;i+=7){ cols.push(padded.slice(i,i+7)); }
+  return cols.map(col=>{
+    const cellsHtml = col.map(date=>{
+      if(!date) return '<div class="hm-cell blank"></div>';
+      const sec = dateSec[date]||0;
+      const lvl = getLevel(sec, goalSec);
+      const title = `${date} ・ ${Math.round(sec/60)}分`;
+      return `<div class="hm-cell ${lvl>0?'lvl'+lvl:''}" title="${title}"></div>`;
+    }).join('');
+    return `<div class="hm-col">${cellsHtml}</div>`;
+  }).join('');
+}
+function last7Days(){
+  const arr = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    arr.push(d.toISOString().slice(0,10));
+  }
+  return arr;
+}
+const WEEKDAY_JP = ['日','月','火','水','木','金','土'];
+
+function renderProgress(){
+  const sec = document.getElementById('sec-progress');
+  const days = last7Days();
+  const dayTotals = days.map(d=>{
+    const daySessions = sessions.filter(s=>s.date===d);
+    const bySubject = {};
+    daySessions.forEach(s=>{ bySubject[s.subjectId] = (bySubject[s.subjectId]||0) + s.durationSec; });
+    const total = daySessions.reduce((a,s)=>a+s.durationSec,0);
+    return {date:d, total, bySubject};
+  });
+  const maxSec = Math.max(60*30, ...dayTotals.map(d=>d.total));
+
+  const barsHtml = dayTotals.map(d=>{
+    const h = maxSec>0 ? Math.max(2, Math.round(d.total/maxSec*130)) : 2;
+    const segs = Object.entries(d.bySubject).map(([subId, secs])=>{
+      const subj = subjectById(subId);
+      const segH = d.total>0 ? Math.round(secs/d.total*h) : 0;
+      return `<div class="bar-seg" style="height:${segH}px;background:${subj?subj.color:'#999'}"></div>`;
+    }).join('');
+    const dow = WEEKDAY_JP[new Date(d.date+'T00:00:00').getDay()];
+    return `<div class="bar-col">
+      <div class="day-total">${d.total>0?Math.round(d.total/60):''}</div>
+      <div class="bar-stack" style="height:${h}px">${segs}</div>
+      <div class="day-label">${dow}</div>
+    </div>`;
+  }).join('');
+
+  const totals = {};
+  sessions.forEach(s=>{ totals[s.subjectId] = (totals[s.subjectId]||0) + s.durationSec; });
+  const maxSubjTotal = Math.max(1, ...Object.values(totals));
+  const subjectRows = subjects.map(s=>{
+    const t = totals[s.id]||0;
+    const pct = Math.round(t/maxSubjTotal*100);
+    return `<div class="subject-row">
+      <div class="name">${escapeHtml(s.name)}</div>
+      <div class="track"><div class="fill" style="width:${pct}%;background:${s.color}"></div></div>
+      <div class="val">${Math.round(t/60)}分</div>
+    </div>`;
+  }).join('') || '<div class="empty">まだ科目がありません。設定タブから追加してください。</div>';
+
+  const recent = [...sessions].sort((a,b)=>b.createdAt-a.createdAt).slice(0,12);
+  const logHtml = recent.map(s=>{
+    const subj = subjectById(s.subjectId);
+    return `<div class="log-item" style="border-left-color:${subj?subj.color:'#999'}">
+      <div class="left"><strong>${subj?escapeHtml(subj.name):'(削除済み科目)'}</strong>
+      <span style="color:var(--ink-soft)">${s.date} ・ ${Math.round(s.durationSec/60)}分</span></div>
+      <button class="del" data-id="${s.id}" title="削除">✕</button>
+    </div>`;
+  }).join('') || '<div class="empty">まだ記録がありません。タイマーを使って学習を記録しましょう。</div>';
+
+  sec.innerHTML = `
+    <div class="tape">進捗</div>
+    <div class="sub">直近7日間の学習時間と、科目別の累計です</div>
+    <div class="chart-wrap">
+      <div class="chart-title">週間学習時間(分)</div>
+      <div class="bars">${barsHtml}</div>
+    </div>
+    <div class="heatmap-wrap">
+      <div class="chart-title">学習カレンダー(直近18週間)</div>
+      <div class="hm-cols">${buildHeatmapHtml(18)}</div>
+      <div class="hm-legend">少ない
+        <div class="hm-cell"></div><div class="hm-cell lvl1"></div><div class="hm-cell lvl2"></div><div class="hm-cell lvl3"></div><div class="hm-cell lvl4"></div>
+      多い</div>
+    </div>
+    <div class="subject-list">${subjectRows}</div>
+    <div class="log-title">最近の記録</div>
+    <div id="logList">${logHtml}</div>
+  `;
+  sec.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      sessions = sessions.filter(s=>s.id!==btn.dataset.id);
+      await saveKey('sessions', sessions);
+      renderProgress();
+    });
+  });
+}
+
+/* ---------------- Goals ---------------- */
+function daysUntil(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  const now = new Date(todayStr()+'T00:00:00');
+  return Math.round((d-now)/86400000);
+}
+
+function renderGoals(){
+  const sec = document.getElementById('sec-goals');
+  const options = subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+
+  const cardsHtml = goals.map(g=>{
+    const achieved = goalLogs.filter(l=>l.goalId===g.id).reduce((a,l)=>a+l.amount,0);
+    const pct = g.targetAmount>0 ? Math.min(100, Math.round(achieved/g.targetAmount*100)) : 0;
+    const subj = subjectById(g.subjectId);
+    const color = subj ? subj.color : 'var(--plum)';
+    const du = daysUntil(g.deadline);
+    const overdue = du < 0 && pct < 100;
+    const metaText = pct>=100 ? '達成しました！' : (overdue ? `期限を${Math.abs(du)}日過ぎています` : (du===0 ? '今日が期限です' : `残り${du}日 (期限 ${g.deadline})`));
+
+    return `<div class="goal-card">
+      <div class="pie" style="background:conic-gradient(${color} 0% ${pct}%, #DCD9C8 ${pct}% 100%)">
+        <div class="pie-inner">${pct}%</div>
+      </div>
+      <div class="goal-info">
+        <div class="g-title">${escapeHtml(g.title)}${subj?` <span style="color:var(--ink-soft);font-weight:400;font-size:12.5px">(${escapeHtml(subj.name)})</span>`:''}</div>
+        <div class="g-meta ${overdue?'overdue':''}">${metaText} ・ ${achieved}/${g.targetAmount}${escapeHtml(g.unit||'')}</div>
+        <div class="goal-record">
+          <input type="number" min="0" step="1" placeholder="達成量" id="rec-${g.id}">
+          <button class="btn btn-ghost" data-record="${g.id}">記録する</button>
+        </div>
+      </div>
+      <button class="goal-del" data-id="${g.id}" title="削除">✕</button>
+    </div>`;
+  }).join('') || '<div class="empty">まだ目標がありません。下のフォームから追加してください。</div>';
+
+  sec.innerHTML = `
+    <div class="tape">目標</div>
+    <div class="sub">「これくらいの量をいつまでに」を決めて、進み具合を円グラフで確認できます</div>
+    <div class="add-form">
+      <input type="text" id="goalTitle" placeholder="やること (例: 単語帳を1周する)">
+      <input type="number" id="goalAmount" placeholder="目標量" min="1" step="1" style="width:100px">
+      <input type="text" id="goalUnit" placeholder="単位 (例: ページ)" style="width:110px">
+      <input type="date" id="goalDeadline" value="${todayStr()}">
+      <select id="goalSubject"><option value="">(科目未設定)</option>${options}</select>
+      <button class="btn btn-start" id="btnAddGoal">追加</button>
+    </div>
+    ${cardsHtml}
+  `;
+
+  document.getElementById('btnAddGoal').addEventListener('click', async ()=>{
+    const title = document.getElementById('goalTitle').value.trim();
+    const targetAmount = parseInt(document.getElementById('goalAmount').value, 10);
+    const unit = document.getElementById('goalUnit').value.trim();
+    const deadline = document.getElementById('goalDeadline').value || todayStr();
+    const subjectId = document.getElementById('goalSubject').value || null;
+    if(!title || !targetAmount || targetAmount<=0) return;
+    goals.push({id:uid(), title, targetAmount, unit, deadline, subjectId});
+    await saveKey('goals', goals);
+    renderGoals();
+  });
+
+  sec.querySelectorAll('[data-record]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const goalId = btn.dataset.record;
+      const input = document.getElementById('rec-'+goalId);
+      const amount = parseInt(input.value, 10);
+      if(!amount || amount<=0) return;
+      const g = goals.find(x=>x.id===goalId);
+      const before = goalLogs.filter(l=>l.goalId===goalId).reduce((a,l)=>a+l.amount,0);
+      goalLogs.push({id:uid(), goalId, amount, date:todayStr()});
+      await saveKey('goalLogs', goalLogs);
+      const after = before + amount;
+      if(g && g.targetAmount>0 && before<g.targetAmount && after>=g.targetAmount){
+        celebrate(`🎉 目標「${g.title}」を達成しました！`);
+      }
+      renderGoals();
+    });
+  });
+
+  sec.querySelectorAll('.goal-del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const goalId = btn.dataset.id;
+      goals = goals.filter(g=>g.id!==goalId);
+      goalLogs = goalLogs.filter(l=>l.goalId!==goalId);
+      await saveKey('goals', goals);
+      await saveKey('goalLogs', goalLogs);
+      renderGoals();
+    });
+  });
+}
+
+/* ---------------- Flashcards ---------------- */
+function renderCards(){
+  const sec = document.getElementById('sec-cards');
+  const options = subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  const pool = flashcards.filter(c=>!c.memorized);
+  const memorizedCount = flashcards.length - pool.length;
+
+  let reviewHtml;
+  if(flashcards.length===0){
+    reviewHtml = '<div class="empty">まだ単語がありません。下のフォームから追加してください。</div>';
+  } else if(pool.length===0){
+    reviewHtml = `<div class="empty">🎉 すべて覚えました！お疲れさまでした。</div>
+      <div style="text-align:center"><button class="btn btn-ghost" id="btnResetCards">もう一度復習する</button></div>`;
+  } else {
+    if(cardState.idx >= pool.length) cardState.idx = 0;
+    const card = pool[cardState.idx];
+    const subj = subjectById(card.subjectId);
+    reviewHtml = `
+      <div class="flash-progress">復習中: ${cardState.idx+1} / ${pool.length}${subj?` ・ ${escapeHtml(subj.name)}`:''}</div>
+      <div class="flash-card ${cardState.flipped?'flipped':''}" id="flashCard">
+        <div class="flash-card-inner">
+          <div class="flash-face flash-front">${escapeHtml(card.term)}</div>
+          <div class="flash-face flash-back">${escapeHtml(card.meaning)}</div>
+        </div>
+      </div>
+      <div class="flash-controls">
+        <button class="btn btn-ghost" id="btnAgain" ${cardState.flipped?'':'disabled'}>もう一度</button>
+        <button class="btn btn-start" id="btnKnown" ${cardState.flipped?'':'disabled'}>覚えた</button>
+      </div>
+    `;
+  }
+
+  const listHtml = flashcards.map(c=>{
+    const subj = subjectById(c.subjectId);
+    return `<div class="card-item">
+      <div><strong>${escapeHtml(c.term)}</strong> <span style="color:var(--ink-soft)">— ${escapeHtml(c.meaning)}</span>${subj?` <span style="color:var(--ink-soft);font-size:11px">(${escapeHtml(subj.name)})</span>`:''}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="badge ${c.memorized?'memo':'pending'}">${c.memorized?'習得済み':'未習得'}</span>
+        <button class="del" data-id="${c.id}" title="削除">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  sec.innerHTML = `
+    <div class="tape">単語帳</div>
+    <div class="sub">カードをタップしてめくり、覚えたかどうかを記録しましょう ・ 習得済み ${memorizedCount}/${flashcards.length}</div>
+    <div class="chart-wrap" style="margin-bottom:24px">${reviewHtml}</div>
+    <div class="add-form">
+      <input type="text" id="cardTerm" placeholder="表 (単語・問題)">
+      <input type="text" id="cardMeaning" placeholder="裏 (意味・答え)">
+      <select id="cardSubject"><option value="">(科目未設定)</option>${options}</select>
+      <button class="btn btn-start" id="btnAddCard">追加</button>
+    </div>
+    <div class="log-title">カード一覧</div>
+    ${listHtml || '<div class="empty">カードがまだありません。</div>'}
+  `;
+
+  const flashEl = document.getElementById('flashCard');
+  if(flashEl){
+    flashEl.addEventListener('click', ()=>{
+      cardState.flipped = !cardState.flipped;
+      renderCards();
+    });
+  }
+  const btnAgain = document.getElementById('btnAgain');
+  if(btnAgain) btnAgain.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    cardState.idx = cardState.idx + 1;
+    cardState.flipped = false;
+    renderCards();
+  });
+  const btnKnown = document.getElementById('btnKnown');
+  if(btnKnown) btnKnown.addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    const poolNow = flashcards.filter(c=>!c.memorized);
+    const card = poolNow[cardState.idx];
+    if(card){ card.memorized = true; await saveKey('flashcards', flashcards); }
+    cardState.flipped = false;
+    renderCards();
+  });
+  const btnReset = document.getElementById('btnResetCards');
+  if(btnReset) btnReset.addEventListener('click', async ()=>{
+    flashcards.forEach(c=>c.memorized=false);
+    await saveKey('flashcards', flashcards);
+    cardState = {idx:0, flipped:false};
+    renderCards();
+  });
+  document.getElementById('btnAddCard').addEventListener('click', async ()=>{
+    const term = document.getElementById('cardTerm').value.trim();
+    const meaning = document.getElementById('cardMeaning').value.trim();
+    const subjectId = document.getElementById('cardSubject').value || null;
+    if(!term || !meaning) return;
+    flashcards.push({id:uid(), term, meaning, subjectId, memorized:false, createdAt:Date.now()});
+    await saveKey('flashcards', flashcards);
+    renderCards();
+  });
+  sec.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      flashcards = flashcards.filter(c=>c.id!==btn.dataset.id);
+      await saveKey('flashcards', flashcards);
+      renderCards();
+    });
+  });
+}
+
+/* ---------------- Reflect (diary / class review) ---------------- */
+function renderReflect(){
+  const sec = document.getElementById('sec-reflect');
+  const subjOptions = subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  const today = todayStr();
+
+  const sorted = [...reflections].sort((a,b)=>{
+    if(a.date!==b.date) return a.date<b.date?1:-1;
+    return b.createdAt-a.createdAt;
+  });
+
+  const listHtml = sorted.map(r=>{
+    if(r.type==='diary'){
+      return `<div class="reflect-item">
+        <div class="r-head">
+          <div class="r-head-left"><span class="r-date">${r.date}</span><span class="r-badge diary">日記</span><span>${r.mood||''}</span></div>
+          <button class="del" data-id="${r.id}" title="削除">✕</button>
+        </div>
+        <div class="r-content">${escapeHtml(r.content)}</div>
+      </div>`;
+    }
+    const subj = subjectById(r.subjectId);
+    const u = r.understanding||0;
+    const stars = '★'.repeat(u) + '☆'.repeat(5-u);
+    return `<div class="reflect-item">
+      <div class="r-head">
+        <div class="r-head-left"><span class="r-date">${r.date}</span><span class="r-badge class">授業の振り返り</span></div>
+        <button class="del" data-id="${r.id}" title="削除">✕</button>
+      </div>
+      <div class="r-content">${escapeHtml(r.content)}</div>
+      <div class="r-meta">${subj?escapeHtml(subj.name)+' ・ ':''}理解度 ${stars}</div>
+    </div>`;
+  }).join('') || '<div class="empty">まだ記録がありません。今日の一言から書いてみましょう。</div>';
+
+  sec.innerHTML = `
+    <div class="tape">振り返り</div>
+    <div class="sub">日記や授業の振り返りを書き留めましょう</div>
+    <div class="add-form" style="flex-direction:column;align-items:stretch;gap:12px">
+      <div class="field-row">
+        <select id="reflectType">
+          <option value="diary">日記</option>
+          <option value="class">授業の振り返り</option>
+        </select>
+        <input type="date" id="reflectDate" value="${today}">
+      </div>
+      <div class="field-row" id="diaryFields">
+        <select id="reflectMood">
+          <option value="😊">😊 良い一日だった</option>
+          <option value="😐">😐 ふつう</option>
+          <option value="😞">😞 いまいちだった</option>
+        </select>
+      </div>
+      <div class="field-row" id="classFields" style="display:none">
+        <select id="reflectSubject"><option value="">(科目未設定)</option>${subjOptions}</select>
+        <select id="reflectUnderstanding">
+          <option value="5">理解度 ★★★★★</option>
+          <option value="4">理解度 ★★★★☆</option>
+          <option value="3" selected>理解度 ★★★☆☆</option>
+          <option value="2">理解度 ★★☆☆☆</option>
+          <option value="1">理解度 ★☆☆☆☆</option>
+        </select>
+      </div>
+      <textarea id="reflectContent" placeholder="内容を書きましょう(今日学んだこと、感じたこと、次に活かしたいことなど)"></textarea>
+      <div><button class="btn btn-start" id="btnAddReflect">記録する</button></div>
+    </div>
+    <div class="log-title">記録一覧</div>
+    ${listHtml}
+  `;
+
+  document.getElementById('reflectType').addEventListener('change', e=>{
+    const isDiary = e.target.value==='diary';
+    document.getElementById('diaryFields').style.display = isDiary?'flex':'none';
+    document.getElementById('classFields').style.display = isDiary?'none':'flex';
+  });
+  document.getElementById('btnAddReflect').addEventListener('click', async ()=>{
+    const type = document.getElementById('reflectType').value;
+    const date = document.getElementById('reflectDate').value || today;
+    const contentEl = document.getElementById('reflectContent');
+    const content = contentEl.value.trim();
+    if(!content) return;
+    if(type==='diary'){
+      const mood = document.getElementById('reflectMood').value;
+      reflections.push({id:uid(), type, date, mood, content, createdAt:Date.now()});
+    }else{
+      const subjectId = document.getElementById('reflectSubject').value || null;
+      const understanding = parseInt(document.getElementById('reflectUnderstanding').value, 10);
+      reflections.push({id:uid(), type, date, subjectId, understanding, content, createdAt:Date.now()});
+    }
+    await saveKey('reflections', reflections);
+    renderReflect();
+  });
+  sec.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      reflections = reflections.filter(r=>r.id!==btn.dataset.id);
+      await saveKey('reflections', reflections);
+      renderReflect();
+    });
+  });
+}
+
+/* ---------------- Schedule ---------------- */
+function renderSchedule(){
+  const sec = document.getElementById('sec-schedule');
+  const options = subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+
+  const groups = {};
+  schedule.forEach(t=>{ (groups[t.date] = groups[t.date]||[]).push(t); });
+  const dates = Object.keys(groups).sort();
+  const today = todayStr();
+
+  const groupsHtml = dates.map(date=>{
+    const items = groups[date].sort((a,b)=> (a.done - b.done));
+    const overdue = date < today && items.some(i=>!i.done);
+    const itemsHtml = items.map(t=>{
+      const subj = subjectById(t.subjectId);
+      return `<div class="task-item ${t.done?'done':''}">
+        <input type="checkbox" data-id="${t.id}" class="chk" ${t.done?'checked':''}>
+        <span class="chip" style="background:${subj?subj.color:'#999'}"></span>
+        <span class="title">${escapeHtml(t.title)}${subj?` <span style="color:var(--ink-soft);font-size:12px">(${escapeHtml(subj.name)})</span>`:''}</span>
+        <button class="del" data-id="${t.id}" title="削除">✕</button>
+      </div>`;
+    }).join('');
+    return `<div class="day-group ${overdue?'overdue':''}">
+      <div class="day-head">${date}${overdue?' ・ 期限超過':''}</div>
+      ${itemsHtml}
+    </div>`;
+  }).join('') || '<div class="empty">予定はまだありません。下のフォームから追加してください。</div>';
+
+  sec.innerHTML = `
+    <div class="tape">予定</div>
+    <div class="sub">学習スケジュールを計画しましょう</div>
+    <div class="add-form">
+      <input type="date" id="taskDate" value="${today}">
+      <select id="taskSubject">${options || '<option value="">(科目未設定)</option>'}</select>
+      <input type="text" id="taskTitle" placeholder="やること (例: 第3章の問題演習)">
+      <button class="btn btn-start" id="btnAddTask">追加</button>
+    </div>
+    <div class="mail-box">
+      <h3>Gmailで予定を送信</h3>
+      <div class="field-row">
+        <input type="email" id="mailTo" placeholder="送り先のメールアドレス" value="${escapeHtml(settings.lastRecipientEmail||'')}">
+        <button class="btn btn-ghost" id="btnSendMail" ${schedule.length===0?'disabled':''}>Gmailで送信</button>
+      </div>
+      <div class="note">Gmailの作成画面が新しいタブで開き、内容が入力された状態になります。内容を確認してから送信してください。</div>
+    </div>
+    ${groupsHtml}
+  `;
+  document.getElementById('btnSendMail').addEventListener('click', async ()=>{
+    const to = document.getElementById('mailTo').value.trim();
+    if(!to){ alert('送り先のメールアドレスを入力してください'); return; }
+    settings.lastRecipientEmail = to;
+    await saveKey('settings', settings);
+
+    const sortedDates = Object.keys(groups).sort();
+    let body = '学習スケジュールを共有します。\n\n';
+    sortedDates.forEach(date=>{
+      body += `【${date}】\n`;
+      groups[date].forEach(t=>{
+        const subj = subjectById(t.subjectId);
+        body += `・${t.done ? '[完了] ' : ''}${t.title}${subj ? `(${subj.name})` : ''}\n`;
+      });
+      body += '\n';
+    });
+    const subject = '学習スケジュールの共有';
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(url, '_blank');
+  });
+  document.getElementById('btnAddTask').addEventListener('click', async ()=>{
+    const date = document.getElementById('taskDate').value || today;
+    const subjectId = document.getElementById('taskSubject').value || null;
+    const titleEl = document.getElementById('taskTitle');
+    const title = titleEl.value.trim();
+    if(!title) return;
+    schedule.push({id:uid(), date, subjectId, title, done:false});
+    await saveKey('schedule', schedule);
+    renderSchedule();
+  });
+  sec.querySelectorAll('.chk').forEach(chk=>{
+    chk.addEventListener('change', async ()=>{
+      const t = schedule.find(x=>x.id===chk.dataset.id);
+      if(t){ t.done = chk.checked; await saveKey('schedule', schedule); renderSchedule(); }
+    });
+  });
+  sec.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      schedule = schedule.filter(t=>t.id!==btn.dataset.id);
+      await saveKey('schedule', schedule);
+      renderSchedule();
+    });
+  });
+}
+
+/* ---------------- Settings ---------------- */
+let pendingColor = SUBJECT_COLORS[0].hex;
+
+function renderSettings(){
+  const sec = document.getElementById('sec-settings');
+  const rows = subjects.map(s=>`
+    <div class="subject-edit-row">
+      <span class="chip" style="width:14px;height:14px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0"></span>
+      <span style="flex:1;font-size:13.5px">${escapeHtml(s.name)}</span>
+      <button class="del" data-id="${s.id}" title="削除">✕</button>
+    </div>`).join('') || '<div class="empty">科目がありません。下のフォームから追加してください。</div>';
+
+  const palette = SUBJECT_COLORS.map(c=>`<div class="swatch ${c.hex===pendingColor?'selected':''}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.name}"></div>`).join('');
+
+  sec.innerHTML = `
+    <div class="tape">設定</div>
+    <div class="sub">科目・目標時間などを管理します</div>
+
+    <div class="settings-block">
+      <h3>科目一覧</h3>
+      ${rows}
+      <div class="add-form" style="margin-top:14px">
+        <input type="text" id="newSubjectName" placeholder="新しい科目名">
+        <div class="palette" id="palette">${palette}</div>
+        <button class="btn btn-start" id="btnAddSubject">追加</button>
+      </div>
+    </div>
+
+    <div class="settings-block">
+      <h3>1日の目標学習時間</h3>
+      <div class="field-row">
+        <input type="number" id="goalInput" value="${settings.dailyGoalMinutes}" min="0" step="5" style="width:100px"> 分
+        <button class="btn btn-ghost" id="btnSaveGoal">保存</button>
+      </div>
+    </div>
+
+    <div class="settings-block">
+      <h3>予定を送る宛先(Gmail)</h3>
+      <div class="field-row">
+        <input type="email" id="recipientInput" value="${escapeHtml(settings.lastRecipientEmail||'')}" placeholder="よく送る相手のメールアドレス" style="min-width:240px">
+        <button class="btn btn-ghost" id="btnSaveRecipient">保存</button>
+      </div>
+      <div class="sub" style="margin:8px 0 0 4px">保存すると、予定タブのGmail送信欄に自動で入力されます。</div>
+    </div>
+
+    <div class="settings-block">
+      <h3>データのバックアップ(他の端末へ移す)</h3>
+      <div class="field-row">
+        <button class="btn btn-ghost" id="btnExport">書き出す(ダウンロード)</button>
+        <label class="btn btn-ghost" for="importFile" style="display:inline-block;cursor:pointer">読み込む</label>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+      </div>
+      <div class="sub" style="margin:8px 0 0 4px">このブラウザのデータをファイルに書き出し、他の端末でそのファイルを読み込むとデータを引き継げます。データはこのブラウザ内だけに保存されるため、自動では同期されません。</div>
+    </div>
+
+    <div class="settings-block">
+      <h3>データの初期化</h3>
+      <div class="danger-zone">
+        <p>科目・記録・予定をすべて削除します。この操作は取り消せません。</p>
+        <button class="btn btn-stop" id="btnReset">すべて削除する</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('palette').querySelectorAll('.swatch').forEach(sw=>{
+    sw.addEventListener('click', ()=>{ pendingColor = sw.dataset.hex; renderSettings(); });
+  });
+  document.getElementById('btnAddSubject').addEventListener('click', async ()=>{
+    const input = document.getElementById('newSubjectName');
+    const name = input.value.trim();
+    if(!name) return;
+    subjects.push({id:uid(), name, color:pendingColor});
+    await saveKey('subjects', subjects);
+    renderSettings();
+  });
+  sec.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      subjects = subjects.filter(s=>s.id!==btn.dataset.id);
+      await saveKey('subjects', subjects);
+      renderSettings();
+    });
+  });
+  document.getElementById('btnSaveGoal').addEventListener('click', async ()=>{
+    const val = parseInt(document.getElementById('goalInput').value,10);
+    settings.dailyGoalMinutes = isNaN(val) ? 0 : Math.max(0,val);
+    await saveKey('settings', settings);
+    renderTimer();
+  });
+  document.getElementById('btnSaveRecipient').addEventListener('click', async ()=>{
+    const email = document.getElementById('recipientInput').value.trim();
+    settings.lastRecipientEmail = email;
+    await saveKey('settings', settings);
+    renderSettings();
+  });
+  document.getElementById('btnExport').addEventListener('click', exportData);
+  document.getElementById('importFile').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(file) importDataFile(file);
+    e.target.value = '';
+  });
+  document.getElementById('btnReset').addEventListener('click', async ()=>{
+    if(!confirm('本当にすべてのデータを削除しますか？この操作は取り消せません。')) return;
+    subjects = []; sessions = []; schedule = [];
+    goals = []; goalLogs = []; flashcards = []; reflections = [];
+    settings = {dailyGoalMinutes:60, lastRecipientEmail:''};
+    await saveKey('subjects', subjects);
+    await saveKey('sessions', sessions);
+    await saveKey('schedule', schedule);
+    await saveKey('goals', goals);
+    await saveKey('goalLogs', goalLogs);
+    await saveKey('flashcards', flashcards);
+    await saveKey('reflections', reflections);
+    await saveKey('settings', settings);
+    renderSettings(); renderTimer();
+  });
+}
+
+function exportData(){
+  const data = {
+    subjects, sessions, schedule, goals, goalLogs, flashcards, reflections, settings,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `study-planner-backup-${todayStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function importDataFile(file){
+  let data;
+  try{
+    const text = await file.text();
+    data = JSON.parse(text);
+  }catch(e){
+    alert('ファイルの形式が正しくありません');
+    return;
+  }
+  if(!confirm('現在このブラウザにあるデータを上書きして読み込みます。よろしいですか？')) return;
+  subjects = data.subjects || [];
+  sessions = data.sessions || [];
+  schedule = data.schedule || [];
+  goals = data.goals || [];
+  goalLogs = data.goalLogs || [];
+  flashcards = data.flashcards || [];
+  reflections = data.reflections || [];
+  settings = data.settings || {dailyGoalMinutes:60, lastRecipientEmail:''};
+  await saveKey('subjects', subjects);
+  await saveKey('sessions', sessions);
+  await saveKey('schedule', schedule);
+  await saveKey('goals', goals);
+  await saveKey('goalLogs', goalLogs);
+  await saveKey('flashcards', flashcards);
+  await saveKey('reflections', reflections);
+  await saveKey('settings', settings);
+  alert('読み込みが完了しました');
+  renderSettings();
+  renderTimer();
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------------- Init ---------------- */
+async function init(){
+  await loadAll();
+  renderShell();
+  renderTimer();
+}
+init();
+
+})();
+</script>
+</body>
+</html>
