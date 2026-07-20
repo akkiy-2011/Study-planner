@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>学習ノート</title>
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap');
 
@@ -397,6 +400,7 @@ let testChartMetric = 'deviation';
 let expandedTestId = null;
 let flashcards = [];  // {id, term, meaning, subjectId, memorized, createdAt}
 let cardState = { idx:0, flipped:false };
+let cardFilterSubject = '';
 let reflections = []; // {id, type:'diary'|'class', date, mood, subjectId, understanding, content, createdAt}
 let settings = { dailyGoalMinutes: 60, lastRecipientEmail: '' };
 
@@ -1030,15 +1034,24 @@ function renderGoals(){
 }
 
 /* ---------------- Flashcards ---------------- */
+function cardMatchesFilter(c){
+  if(cardFilterSubject==='') return true;
+  if(cardFilterSubject==='__none__') return !c.subjectId;
+  return c.subjectId===cardFilterSubject;
+}
+
 function renderCards(){
   const sec = document.getElementById('sec-cards');
   const options = subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-  const pool = flashcards.filter(c=>!c.memorized);
-  const memorizedCount = flashcards.length - pool.length;
+  const filteredCards = flashcards.filter(cardMatchesFilter);
+  const pool = filteredCards.filter(c=>!c.memorized);
+  const memorizedCount = filteredCards.length - pool.length;
 
   let reviewHtml;
-  if(flashcards.length===0){
-    reviewHtml = '<div class="empty">まだ単語がありません。下のフォームから追加してください。</div>';
+  if(filteredCards.length===0){
+    reviewHtml = flashcards.length===0
+      ? '<div class="empty">まだ単語がありません。下のフォームから追加してください。</div>'
+      : '<div class="empty">この教科のカードはありません。</div>';
   } else if(pool.length===0){
     reviewHtml = `<div class="empty">🎉 すべて覚えました！お疲れさまでした。</div>
       <div style="text-align:center"><button class="btn btn-ghost" id="btnResetCards">もう一度復習する</button></div>`;
@@ -1062,7 +1075,7 @@ function renderCards(){
     `;
   }
 
-  const listHtml = flashcards.map(c=>{
+  function cardItemHtml(c){
     const subj = subjectById(c.subjectId);
     return `<div class="card-item">
       <div><strong>${escapeHtml(c.term)}</strong> <span style="color:var(--ink-soft)">— ${escapeHtml(c.meaning)}</span>${subj?` <span style="color:var(--ink-soft);font-size:11px">(${escapeHtml(subj.name)})</span>`:''}</div>
@@ -1072,11 +1085,34 @@ function renderCards(){
         <button class="del" data-id="${c.id}" title="削除">✕</button>
       </div>
     </div>`;
-  }).join('');
+  }
+
+  let listHtml = '';
+  [...subjects, null].forEach(s=>{
+    const groupCards = filteredCards.filter(c => s ? c.subjectId===s.id : !c.subjectId);
+    if(groupCards.length===0) return;
+    const headerColor = s ? s.color : '#B0AC9B';
+    const headerName = s ? s.name : '(科目未設定)';
+    listHtml += `<div style="margin:18px 0 8px;display:flex;align-items:center;gap:8px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${headerColor};display:inline-block;flex-shrink:0"></span>
+        <strong style="font-size:13.5px">${escapeHtml(headerName)}</strong>
+        <span style="color:var(--ink-soft);font-size:12px">(${groupCards.length}枚)</span>
+      </div>`;
+    listHtml += groupCards.map(cardItemHtml).join('');
+  });
+  if(!listHtml) listHtml = '<div class="empty">カードがまだありません。</div>';
 
   sec.innerHTML = `
     <div class="tape">単語帳</div>
-    <div class="sub">カードをタップしてめくり、覚えたかどうかを記録しましょう ・ 習得済み ${memorizedCount}/${flashcards.length}</div>
+    <div class="sub">カードをタップしてめくり、覚えたかどうかを記録しましょう ・ 習得済み ${memorizedCount}/${filteredCards.length}</div>
+    <div class="field-row" style="margin-bottom:16px">
+      <label style="font-size:13px;color:var(--ink-soft)">教科で絞り込み:</label>
+      <select id="cardFilter">
+        <option value="" ${cardFilterSubject===''?'selected':''}>すべての教科</option>
+        ${subjects.map(s=>`<option value="${s.id}" ${cardFilterSubject===s.id?'selected':''}>${escapeHtml(s.name)}</option>`).join('')}
+        <option value="__none__" ${cardFilterSubject==='__none__'?'selected':''}>(科目未設定)</option>
+      </select>
+    </div>
     <div class="chart-wrap" style="margin-bottom:24px">${reviewHtml}</div>
     <div class="add-form">
       <input type="text" id="cardTerm" placeholder="表 (単語・問題)">
@@ -1084,10 +1120,15 @@ function renderCards(){
       <select id="cardSubject"><option value="">(科目未設定)</option>${options}</select>
       <button class="btn btn-start" id="btnAddCard">追加</button>
     </div>
-    <div class="log-title">カード一覧</div>
-    ${listHtml || '<div class="empty">カードがまだありません。</div>'}
+    <div class="log-title">カード一覧(教科別)</div>
+    ${listHtml}
   `;
 
+  document.getElementById('cardFilter').addEventListener('change', e=>{
+    cardFilterSubject = e.target.value;
+    cardState = {idx:0, flipped:false};
+    renderCards();
+  });
   const flashEl = document.getElementById('flashCard');
   if(flashEl){
     flashEl.addEventListener('click', ()=>{
@@ -1112,7 +1153,7 @@ function renderCards(){
   const btnKnown = document.getElementById('btnKnown');
   if(btnKnown) btnKnown.addEventListener('click', async (e)=>{
     e.stopPropagation();
-    const poolNow = flashcards.filter(c=>!c.memorized);
+    const poolNow = flashcards.filter(c=>!c.memorized && cardMatchesFilter(c));
     const card = poolNow[cardState.idx];
     if(card){ card.memorized = true; await saveKey('flashcards', flashcards); }
     cardState.flipped = false;
@@ -1126,7 +1167,7 @@ function renderCards(){
   });
   const btnReset = document.getElementById('btnResetCards');
   if(btnReset) btnReset.addEventListener('click', async ()=>{
-    flashcards.forEach(c=>c.memorized=false);
+    flashcards.filter(cardMatchesFilter).forEach(c=>c.memorized=false);
     await saveKey('flashcards', flashcards);
     cardState = {idx:0, flipped:false};
     renderCards();
