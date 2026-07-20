@@ -544,6 +544,15 @@ function renderTimer(){
       <div class="stat-box"><div class="num">${todaySessions.length}</div><div class="label">今日のセッション数</div></div>
       <div class="stat-box"><div class="num">🔥 ${streak}</div><div class="label">連続学習日数</div></div>
     </div>
+    <div class="chart-wrap" style="margin-top:24px">
+      <div class="chart-title">手動で記録する</div>
+      <div class="field-row">
+        <input type="date" id="manualDate" value="${todayStr()}">
+        <select id="manualSubject" ${subjects.length===0?'disabled':''}>${options || '<option>科目を追加してください</option>'}</select>
+        <input type="number" id="manualMinutes" placeholder="分" min="1" step="1" style="width:90px">
+        <button class="btn btn-ghost" id="btnManualAdd" ${subjects.length===0?'disabled':''}>記録する</button>
+      </div>
+    </div>
   `;
 
   document.getElementById('subjectSelect').addEventListener('change', e=>{
@@ -552,6 +561,14 @@ function renderTimer(){
   document.getElementById('btnStart').addEventListener('click', startTimer);
   document.getElementById('btnPause').addEventListener('click', pauseTimer);
   document.getElementById('btnStop').addEventListener('click', stopTimer);
+  document.getElementById('btnManualAdd').addEventListener('click', async ()=>{
+    const date = document.getElementById('manualDate').value || todayStr();
+    const subjectId = document.getElementById('manualSubject').value;
+    const minutes = parseInt(document.getElementById('manualMinutes').value, 10);
+    if(!subjectId || !minutes || minutes<=0) return;
+    await recordSession(subjectId, date, minutes*60);
+    renderTimer();
+  });
 }
 
 function startTimer(){
@@ -572,18 +589,34 @@ function pauseTimer(){
   clearInterval(timerInterval);
   renderTimer();
 }
-async function stopTimer(){
-  clearInterval(timerInterval);
-  const durationSec = Math.round(timerState.elapsedMs/1000);
-  if(durationSec > 0 && timerState.subjectId){
-    const beforeSec = sessions.filter(s=>s.date===todayStr()).reduce((a,s)=>a+s.durationSec,0);
-    sessions.push({id:uid(), subjectId:timerState.subjectId, date:todayStr(), durationSec, createdAt:Date.now()});
-    await saveKey('sessions', sessions);
+async function recordSession(subjectId, date, durationSec, extra){
+  const beforeSec = sessions.filter(s=>s.date===date).reduce((a,s)=>a+s.durationSec,0);
+  const session = Object.assign({id:uid(), subjectId, date, durationSec, createdAt:Date.now()}, extra||{});
+  sessions.push(session);
+  await saveKey('sessions', sessions);
+  if(date===todayStr()){
     const goalSec = (settings.dailyGoalMinutes||0)*60;
     const afterSec = beforeSec + durationSec;
     if(goalSec>0 && beforeSec<goalSec && afterSec>=goalSec){
       celebrate('🎉 今日の目標を達成しました！');
     }
+  }
+  return session;
+}
+function timeToMinutes(t){
+  const parts = String(t).split(':');
+  return (parseInt(parts[0],10)||0)*60 + (parseInt(parts[1],10)||0);
+}
+function computeDurationSec(startTime, endTime){
+  const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
+  return diff > 0 ? diff*60 : 0;
+}
+
+async function stopTimer(){
+  clearInterval(timerInterval);
+  const durationSec = Math.round(timerState.elapsedMs/1000);
+  if(durationSec > 0 && timerState.subjectId){
+    await recordSession(timerState.subjectId, todayStr(), durationSec);
   }
   timerState = { running:false, startedAt:null, elapsedMs:0, subjectId:timerState.subjectId };
   renderTimer();
@@ -1033,6 +1066,7 @@ function renderSchedule(){
         <span class="chip" style="background:${subj?subj.color:'#999'}"></span>
         ${timeLabel ? `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft);flex-shrink:0">${timeLabel}</span>` : ''}
         <span class="title">${escapeHtml(t.title)}${subj?` <span style="color:var(--ink-soft);font-size:12px">(${escapeHtml(subj.name)})</span>`:''}</span>
+        ${t.sessionId ? '<span class="badge memo" title="学習時間に記録されました">記録済</span>' : ''}
         <button class="del" data-id="${t.id}" title="削除">✕</button>
       </div>`;
     }).join('');
@@ -1100,12 +1134,33 @@ function renderSchedule(){
   sec.querySelectorAll('.chk').forEach(chk=>{
     chk.addEventListener('change', async ()=>{
       const t = schedule.find(x=>x.id===chk.dataset.id);
-      if(t){ t.done = chk.checked; await saveKey('schedule', schedule); renderSchedule(); }
+      if(!t) return;
+      t.done = chk.checked;
+      if(t.done){
+        if(!t.sessionId && t.subjectId && t.startTime && t.endTime){
+          const durationSec = computeDurationSec(t.startTime, t.endTime);
+          if(durationSec > 0){
+            const session = await recordSession(t.subjectId, t.date, durationSec);
+            t.sessionId = session.id;
+          }
+        }
+      }else if(t.sessionId){
+        sessions = sessions.filter(s=>s.id!==t.sessionId);
+        await saveKey('sessions', sessions);
+        t.sessionId = null;
+      }
+      await saveKey('schedule', schedule);
+      renderSchedule();
     });
   });
   sec.querySelectorAll('.del').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
-      schedule = schedule.filter(t=>t.id!==btn.dataset.id);
+      const t = schedule.find(x=>x.id===btn.dataset.id);
+      if(t && t.sessionId){
+        sessions = sessions.filter(s=>s.id!==t.sessionId);
+        await saveKey('sessions', sessions);
+      }
+      schedule = schedule.filter(x=>x.id!==btn.dataset.id);
       await saveKey('schedule', schedule);
       renderSchedule();
     });
