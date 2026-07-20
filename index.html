@@ -863,6 +863,7 @@ function renderCards(){
         </div>
       </div>
       <div class="flash-controls">
+        <button class="btn btn-ghost" id="btnSkip">スキップ</button>
         <button class="btn btn-ghost" id="btnAgain" ${cardState.flipped?'':'disabled'}>もう一度</button>
         <button class="btn btn-start" id="btnKnown" ${cardState.flipped?'':'disabled'}>覚えた</button>
       </div>
@@ -875,6 +876,7 @@ function renderCards(){
       <div><strong>${escapeHtml(c.term)}</strong> <span style="color:var(--ink-soft)">— ${escapeHtml(c.meaning)}</span>${subj?` <span style="color:var(--ink-soft);font-size:11px">(${escapeHtml(subj.name)})</span>`:''}</div>
       <div style="display:flex;align-items:center;gap:10px">
         <span class="badge ${c.memorized?'memo':'pending'}">${c.memorized?'習得済み':'未習得'}</span>
+        <button class="btn btn-ghost" data-toggle="${c.id}" style="padding:4px 12px;font-size:12px">${c.memorized?'未習得に戻す':'習得済みにする'}</button>
         <button class="del" data-id="${c.id}" title="削除">✕</button>
       </div>
     </div>`;
@@ -901,6 +903,13 @@ function renderCards(){
       renderCards();
     });
   }
+  const btnSkip = document.getElementById('btnSkip');
+  if(btnSkip) btnSkip.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    cardState.idx = cardState.idx + 1;
+    cardState.flipped = false;
+    renderCards();
+  });
   const btnAgain = document.getElementById('btnAgain');
   if(btnAgain) btnAgain.addEventListener('click', (e)=>{
     e.stopPropagation();
@@ -916,6 +925,12 @@ function renderCards(){
     if(card){ card.memorized = true; await saveKey('flashcards', flashcards); }
     cardState.flipped = false;
     renderCards();
+  });
+  sec.querySelectorAll('[data-toggle]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const c = flashcards.find(x=>x.id===btn.dataset.toggle);
+      if(c){ c.memorized = !c.memorized; await saveKey('flashcards', flashcards); renderCards(); }
+    });
   });
   const btnReset = document.getElementById('btnResetCards');
   if(btnReset) btnReset.addEventListener('click', async ()=>{
