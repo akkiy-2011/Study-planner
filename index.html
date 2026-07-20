@@ -21,6 +21,7 @@
   --plum:#7B4B94;
   --teal:#1F7A6C;
   --rose:#A2475A;
+  --sky:#2E6E8E;
   --tab-w:196px;
 }
 *{box-sizing:border-box;}
@@ -76,6 +77,7 @@ body{
 .tab-btn[data-tab="timer"] .dot{ background:var(--indigo); }
 .tab-btn[data-tab="progress"] .dot{ background:var(--forest); }
 .tab-btn[data-tab="goals"] .dot{ background:var(--plum); }
+.tab-btn[data-tab="tests"] .dot{ background:var(--sky); }
 .tab-btn[data-tab="cards"] .dot{ background:var(--teal); }
 .tab-btn[data-tab="reflect"] .dot{ background:var(--rose); }
 .tab-btn[data-tab="schedule"] .dot{ background:var(--sienna); }
@@ -389,6 +391,10 @@ let sessions = [];   // {id, subjectId, date:'YYYY-MM-DD', durationSec, createdA
 let schedule = [];   // {id, date, subjectId, title, done}
 let goals = [];       // {id, title, targetAmount, unit, deadline, subjectId}
 let goalLogs = [];    // {id, goalId, amount, date}
+let tests = [];        // {id, name, date, createdAt}
+let testEntries = [];  // {id, testId, subjectId, score, deviation, note, createdAt}
+let testChartMetric = 'deviation';
+let expandedTestId = null;
 let flashcards = [];  // {id, term, meaning, subjectId, memorized, createdAt}
 let cardState = { idx:0, flipped:false };
 let reflections = []; // {id, type:'diary'|'class', date, mood, subjectId, understanding, content, createdAt}
@@ -457,6 +463,8 @@ async function loadAll(){
   schedule = await loadKey('schedule', []);
   goals = await loadKey('goals', []);
   goalLogs = await loadKey('goalLogs', []);
+  tests = await loadKey('tests', []);
+  testEntries = await loadKey('testEntries', []);
   flashcards = await loadKey('flashcards', []);
   reflections = await loadKey('reflections', []);
   settings = await loadKey('settings', {dailyGoalMinutes:60, lastRecipientEmail:''});
@@ -473,6 +481,7 @@ function renderShell(){
       <button class="tab-btn active" data-tab="timer"><span class="dot"></span>タイマー</button>
       <button class="tab-btn" data-tab="progress"><span class="dot"></span>進捗</button>
       <button class="tab-btn" data-tab="goals"><span class="dot"></span>目標</button>
+      <button class="tab-btn" data-tab="tests"><span class="dot"></span>テスト</button>
       <button class="tab-btn" data-tab="cards"><span class="dot"></span>単語帳</button>
       <button class="tab-btn" data-tab="reflect"><span class="dot"></span>振り返り</button>
       <button class="tab-btn" data-tab="schedule"><span class="dot"></span>予定</button>
@@ -482,6 +491,7 @@ function renderShell(){
       <div class="section active" id="sec-timer"></div>
       <div class="section" id="sec-progress"></div>
       <div class="section" id="sec-goals"></div>
+      <div class="section" id="sec-tests"></div>
       <div class="section" id="sec-cards"></div>
       <div class="section" id="sec-reflect"></div>
       <div class="section" id="sec-schedule"></div>
@@ -496,6 +506,7 @@ function renderShell(){
       document.getElementById('sec-'+btn.dataset.tab).classList.add('active');
       if(btn.dataset.tab==='progress') renderProgress();
       if(btn.dataset.tab==='goals') renderGoals();
+      if(btn.dataset.tab==='tests') renderTests();
       if(btn.dataset.tab==='cards') renderCards();
       if(btn.dataset.tab==='reflect') renderReflect();
       if(btn.dataset.tab==='schedule') renderSchedule();
@@ -743,6 +754,187 @@ function renderProgress(){
       renderProgress();
     });
   });
+}
+
+/* ---------------- Tests (line chart) ---------------- */
+function buildLineSvg(points, color){
+  const valid = points.filter(p=>p.value!=null && !isNaN(p.value));
+  if(valid.length===0) return '<div class="empty">この科目のデータはまだありません。</div>';
+  const w = 600, h = 150, padX = 26, padY = 22;
+  const values = valid.map(p=>p.value);
+  let minV = Math.min(...values), maxV = Math.max(...values);
+  if(minV===maxV){ minV -= 5; maxV += 5; }
+  const range = maxV - minV;
+  minV -= range*0.15; maxV += range*0.15;
+  const n = points.length;
+  const stepX = n>1 ? (w-2*padX)/(n-1) : 0;
+  const xAt = i => padX + stepX*i;
+  const yAt = v => (h-padY) - ((v-minV)/(maxV-minV))*(h-2*padY);
+
+  let pathPoints = [];
+  let circles = '';
+  let labels = '';
+  points.forEach((p,i)=>{
+    const x = xAt(i);
+    const shortLabel = p.label.length>6 ? p.label.slice(0,5)+'…' : p.label;
+    labels += `<text x="${x}" y="${h-4}" font-size="10" fill="#8a8676" text-anchor="middle">${escapeHtml(shortLabel)}</text>`;
+    if(p.value==null || isNaN(p.value)) return;
+    const y = yAt(p.value);
+    pathPoints.push(`${x},${y}`);
+    circles += `<circle cx="${x}" cy="${y}" r="4" fill="${color}"></circle><text x="${x}" y="${y-9}" font-size="10" fill="${color}" text-anchor="middle" font-weight="700">${p.value}</text>`;
+  });
+  const path = pathPoints.length>1 ? `<polyline points="${pathPoints.join(' ')}" fill="none" stroke="${color}" stroke-width="2.5"/>` : '';
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:150px;display:block">${path}${circles}${labels}</svg>`;
+}
+
+function renderTests(){
+  const sec = document.getElementById('sec-tests');
+  const subjOptions = subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+
+  const sortedTests = [...tests].sort((a,b)=>{
+    const ad=a.date||'', bd=b.date||'';
+    if(ad!==bd) return bd.localeCompare(ad);
+    return b.createdAt-a.createdAt;
+  });
+
+  const foldersHtml = sortedTests.map(t=>{
+    const entries = testEntries.filter(e=>e.testId===t.id);
+    const isOpen = expandedTestId===t.id;
+    const entriesHtml = entries.map(e=>{
+      const subj = subjectById(e.subjectId);
+      return `<div class="card-item">
+        <div><strong>${subj?escapeHtml(subj.name):'(科目未設定)'}</strong>
+          <span style="color:var(--ink-soft)">${e.score!=null?` ・ 点数 ${e.score}`:''}${e.deviation!=null?` ・ 偏差値 ${e.deviation}`:''}</span>
+          ${e.note?`<div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;white-space:pre-wrap">${escapeHtml(e.note)}</div>`:''}
+        </div>
+        <button class="del" data-entry="${e.id}" title="削除">✕</button>
+      </div>`;
+    }).join('') || '<div class="empty">まだ科目が追加されていません。</div>';
+
+    return `<div class="reflect-item" style="margin-bottom:14px">
+      <div class="r-head" data-toggle-test="${t.id}" style="cursor:pointer">
+        <div class="r-head-left"><strong style="font-size:14.5px">${escapeHtml(t.name)}</strong>${t.date?`<span class="r-date">${t.date}</span>`:''}<span style="color:var(--ink-soft);font-size:12px">(${entries.length}科目)</span></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="color:var(--ink-soft);font-size:13px">${isOpen?'閉じる ▲':'開く ▼'}</span>
+          <button class="del" data-testdel="${t.id}" title="削除">✕</button>
+        </div>
+      </div>
+      ${isOpen ? `
+        <div style="margin-top:14px">
+          ${entriesHtml}
+          <div class="add-form" style="margin-top:12px">
+            <select id="entrySubject-${t.id}"><option value="">科目を選択</option>${subjOptions}</select>
+            <input type="number" id="entryScore-${t.id}" placeholder="点数" style="width:90px">
+            <input type="number" id="entryDeviation-${t.id}" placeholder="偏差値" style="width:90px">
+            <input type="text" id="entryNote-${t.id}" placeholder="振り返り・ポイント" style="flex:1;min-width:160px">
+            <button class="btn btn-ghost" data-addentry="${t.id}">追加</button>
+          </div>
+        </div>
+      ` : ''}
+    </div>`;
+  }).join('') || '<div class="empty">まだテストがありません。下のフォームから追加してください。</div>';
+
+  const metric = testChartMetric;
+  const trendsHtml = subjects.map(s=>{
+    const subjEntries = testEntries.filter(e=>e.subjectId===s.id).map(e=>{
+      const test = tests.find(t=>t.id===e.testId);
+      return {
+        label: test ? test.name : '?',
+        date: test ? (test.date||'') : '',
+        createdAt: test ? test.createdAt : 0,
+        value: metric==='deviation' ? e.deviation : e.score
+      };
+    }).sort((a,b)=>{
+      if(a.date!==b.date) return a.date.localeCompare(b.date);
+      return a.createdAt-b.createdAt;
+    });
+    if(subjEntries.length===0) return '';
+    return `<div style="margin-bottom:26px">
+      <div class="chart-title" style="margin-bottom:8px">${escapeHtml(s.name)}</div>
+      ${buildLineSvg(subjEntries, s.color)}
+    </div>`;
+  }).join('') || '';
+
+  sec.innerHTML = `
+    <div class="tape">テスト</div>
+    <div class="sub">テストごとにフォルダを作り、教科の点数・偏差値・振り返りを記録しましょう</div>
+    <div class="add-form">
+      <input type="text" id="testName" placeholder="テスト名 (例: 前期中間テスト)" style="flex:1;min-width:180px">
+      <input type="date" id="testDate">
+      <button class="btn btn-start" id="btnAddTest">フォルダを作成</button>
+    </div>
+    ${foldersHtml}
+    <div class="chart-wrap" style="margin-top:28px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+        <div class="chart-title" style="margin-bottom:0">科目別の推移</div>
+        <div class="field-row" style="gap:6px">
+          <button class="btn btn-ghost" id="metricDeviation" style="padding:5px 12px;font-size:12px;${metric==='deviation'?'background:var(--indigo);color:#fff;':''}">偏差値</button>
+          <button class="btn btn-ghost" id="metricScore" style="padding:5px 12px;font-size:12px;${metric==='score'?'background:var(--indigo);color:#fff;':''}">点数</button>
+        </div>
+      </div>
+      ${trendsHtml || '<div class="empty">まだデータがありません。テストに科目の記録を追加すると、ここに推移グラフが表示されます。</div>'}
+    </div>
+  `;
+
+  document.getElementById('btnAddTest').addEventListener('click', async ()=>{
+    const nameEl = document.getElementById('testName');
+    const name = nameEl.value.trim();
+    const date = document.getElementById('testDate').value || '';
+    if(!name) return;
+    const t = {id:uid(), name, date, createdAt:Date.now()};
+    tests.push(t);
+    await saveKey('tests', tests);
+    expandedTestId = t.id;
+    renderTests();
+  });
+  sec.querySelectorAll('[data-toggle-test]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = el.dataset.toggleTest;
+      expandedTestId = expandedTestId===id ? null : id;
+      renderTests();
+    });
+  });
+  sec.querySelectorAll('[data-testdel]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const id = btn.dataset.testdel;
+      if(!confirm('このテストフォルダと中の記録をすべて削除します。よろしいですか？')) return;
+      tests = tests.filter(t=>t.id!==id);
+      testEntries = testEntries.filter(en=>en.testId!==id);
+      await saveKey('tests', tests);
+      await saveKey('testEntries', testEntries);
+      if(expandedTestId===id) expandedTestId = null;
+      renderTests();
+    });
+  });
+  sec.querySelectorAll('[data-addentry]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const testId = btn.dataset.addentry;
+      const subjectId = document.getElementById(`entrySubject-${testId}`).value;
+      const scoreRaw = document.getElementById(`entryScore-${testId}`).value;
+      const devRaw = document.getElementById(`entryDeviation-${testId}`).value;
+      const note = document.getElementById(`entryNote-${testId}`).value.trim();
+      if(!subjectId) return;
+      const score = scoreRaw!=='' ? parseFloat(scoreRaw) : null;
+      const deviation = devRaw!=='' ? parseFloat(devRaw) : null;
+      if(score==null && deviation==null && !note) return;
+      testEntries.push({id:uid(), testId, subjectId, score, deviation, note, createdAt:Date.now()});
+      await saveKey('testEntries', testEntries);
+      renderTests();
+    });
+  });
+  sec.querySelectorAll('[data-entry]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      testEntries = testEntries.filter(en=>en.id!==btn.dataset.entry);
+      await saveKey('testEntries', testEntries);
+      renderTests();
+    });
+  });
+  const md = document.getElementById('metricDeviation');
+  const ms = document.getElementById('metricScore');
+  if(md) md.addEventListener('click', ()=>{ testChartMetric='deviation'; renderTests(); });
+  if(ms) ms.addEventListener('click', ()=>{ testChartMetric='score'; renderTests(); });
 }
 
 /* ---------------- Goals ---------------- */
@@ -1286,6 +1478,7 @@ function renderSettings(){
     if(!confirm('本当にすべてのデータを削除しますか？この操作は取り消せません。')) return;
     subjects = []; sessions = []; schedule = [];
     goals = []; goalLogs = []; flashcards = []; reflections = [];
+    tests = []; testEntries = [];
     settings = {dailyGoalMinutes:60, lastRecipientEmail:''};
     await saveKey('subjects', subjects);
     await saveKey('sessions', sessions);
@@ -1294,6 +1487,8 @@ function renderSettings(){
     await saveKey('goalLogs', goalLogs);
     await saveKey('flashcards', flashcards);
     await saveKey('reflections', reflections);
+    await saveKey('tests', tests);
+    await saveKey('testEntries', testEntries);
     await saveKey('settings', settings);
     renderSettings(); renderTimer();
   });
@@ -1301,7 +1496,7 @@ function renderSettings(){
 
 function exportData(){
   const data = {
-    subjects, sessions, schedule, goals, goalLogs, flashcards, reflections, settings,
+    subjects, sessions, schedule, goals, goalLogs, flashcards, reflections, tests, testEntries, settings,
     exportedAt: new Date().toISOString()
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
@@ -1332,6 +1527,8 @@ async function importDataFile(file){
   goalLogs = data.goalLogs || [];
   flashcards = data.flashcards || [];
   reflections = data.reflections || [];
+  tests = data.tests || [];
+  testEntries = data.testEntries || [];
   settings = data.settings || {dailyGoalMinutes:60, lastRecipientEmail:''};
   await saveKey('subjects', subjects);
   await saveKey('sessions', sessions);
@@ -1340,6 +1537,8 @@ async function importDataFile(file){
   await saveKey('goalLogs', goalLogs);
   await saveKey('flashcards', flashcards);
   await saveKey('reflections', reflections);
+  await saveKey('tests', tests);
+  await saveKey('testEntries', testEntries);
   await saveKey('settings', settings);
   alert('読み込みが完了しました');
   renderSettings();
