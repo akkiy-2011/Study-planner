@@ -1020,13 +1020,18 @@ function renderSchedule(){
   const today = todayStr();
 
   const groupsHtml = dates.map(date=>{
-    const items = groups[date].sort((a,b)=> (a.done - b.done));
+    const items = groups[date].sort((a,b)=>{
+      if(a.done !== b.done) return a.done - b.done;
+      return (a.startTime||'').localeCompare(b.startTime||'');
+    });
     const overdue = date < today && items.some(i=>!i.done);
     const itemsHtml = items.map(t=>{
       const subj = subjectById(t.subjectId);
+      const timeLabel = t.startTime ? `${t.startTime}${t.endTime ? '〜'+t.endTime : ''}` : '';
       return `<div class="task-item ${t.done?'done':''}">
         <input type="checkbox" data-id="${t.id}" class="chk" ${t.done?'checked':''}>
         <span class="chip" style="background:${subj?subj.color:'#999'}"></span>
+        ${timeLabel ? `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft);flex-shrink:0">${timeLabel}</span>` : ''}
         <span class="title">${escapeHtml(t.title)}${subj?` <span style="color:var(--ink-soft);font-size:12px">(${escapeHtml(subj.name)})</span>`:''}</span>
         <button class="del" data-id="${t.id}" title="削除">✕</button>
       </div>`;
@@ -1042,6 +1047,8 @@ function renderSchedule(){
     <div class="sub">学習スケジュールを計画しましょう</div>
     <div class="add-form">
       <input type="date" id="taskDate" value="${today}">
+      <input type="time" id="taskStart" style="width:110px">
+      <input type="time" id="taskEnd" style="width:110px">
       <select id="taskSubject">${options || '<option value="">(科目未設定)</option>'}</select>
       <input type="text" id="taskTitle" placeholder="やること (例: 第3章の問題演習)">
       <button class="btn btn-start" id="btnAddTask">追加</button>
@@ -1066,9 +1073,11 @@ function renderSchedule(){
     let body = '学習スケジュールを共有します。\n\n';
     sortedDates.forEach(date=>{
       body += `【${date}】\n`;
-      groups[date].forEach(t=>{
+      const items = [...groups[date]].sort((a,b)=>(a.startTime||'').localeCompare(b.startTime||''));
+      items.forEach(t=>{
         const subj = subjectById(t.subjectId);
-        body += `・${t.done ? '[完了] ' : ''}${t.title}${subj ? `(${subj.name})` : ''}\n`;
+        const timeLabel = t.startTime ? `${t.startTime}${t.endTime ? '〜'+t.endTime : ''} ` : '';
+        body += `・${timeLabel}${t.done ? '[完了] ' : ''}${t.title}${subj ? `(${subj.name})` : ''}\n`;
       });
       body += '\n';
     });
@@ -1078,11 +1087,13 @@ function renderSchedule(){
   });
   document.getElementById('btnAddTask').addEventListener('click', async ()=>{
     const date = document.getElementById('taskDate').value || today;
+    const startTime = document.getElementById('taskStart').value || '';
+    const endTime = document.getElementById('taskEnd').value || '';
     const subjectId = document.getElementById('taskSubject').value || null;
     const titleEl = document.getElementById('taskTitle');
     const title = titleEl.value.trim();
     if(!title) return;
-    schedule.push({id:uid(), date, subjectId, title, done:false});
+    schedule.push({id:uid(), date, startTime, endTime, subjectId, title, done:false});
     await saveKey('schedule', schedule);
     renderSchedule();
   });
