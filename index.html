@@ -3,9 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>学習ノート</title>
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap');
 
@@ -210,20 +207,13 @@ select, input[type=text], input[type=number], input[type=date], input[type=email
 
 .log-title{ font-weight:700; font-size:14px; margin:28px 0 12px; color:var(--indigo); }
 .log-item{
-  display:flex; flex-direction:column; gap:2px;
+  display:flex; justify-content:space-between; align-items:center;
   padding:10px 14px; background:var(--paper); border-radius:8px; margin-bottom:6px; font-size:13px;
   border-left:4px solid var(--indigo);
 }
 .log-item .left{ display:flex; gap:10px; align-items:center; }
 .log-item .del{ background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:15px; }
 .log-item .del:hover{ color:var(--sienna); }
-.memo-input{
-  width:100%; font-size:12.5px; padding:7px 10px; margin-top:6px;
-  border:1px dashed var(--line); border-radius:6px; background:transparent; color:var(--ink);
-  font-family:'Zen Kaku Gothic New',sans-serif;
-}
-.memo-input:focus{ background:#fff; border-style:solid; border-color:var(--indigo-l); outline:none; }
-.memo-input::placeholder{ color:#b3af9e; }
 .empty{ color:var(--ink-soft); font-size:13.5px; padding:16px 0; }
 
 /* ---- Schedule ---- */
@@ -239,10 +229,9 @@ select, input[type=text], input[type=number], input[type=date], input[type=email
 }
 .day-group.overdue .day-head{ background:var(--ink-soft); }
 .task-item{
-  display:flex; flex-direction:column; gap:6px;
+  display:flex; align-items:center; gap:12px;
   background:var(--paper); border-radius:8px; padding:11px 14px; margin-bottom:6px;
 }
-.task-item-row{ display:flex; align-items:center; gap:12px; }
 .task-item.done{ opacity:.5; }
 .task-item.done .title{ text-decoration:line-through; }
 .task-item .chip{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
@@ -257,7 +246,29 @@ input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); curso
 .subject-edit-row{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
 .swatch{ width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; flex-shrink:0; }
 .swatch.selected{ border-color:var(--ink); }
-.palette{ display:flex; gap:8px; }
+.palette{ display:flex; gap:8px; align-items:center; }
+.palette-divider{ width:1px; align-self:stretch; background:var(--line); margin:0 2px; }
+.custom-color-wrap{
+  position:relative; width:22px; height:22px; flex-shrink:0; border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.9) 0%, rgba(255,255,255,0) 65%),
+    conic-gradient(from 0deg,
+      hsl(0,90%,55%), hsl(30,90%,55%), hsl(60,90%,55%), hsl(90,90%,55%),
+      hsl(120,90%,55%), hsl(150,90%,55%), hsl(180,90%,55%), hsl(210,90%,55%),
+      hsl(240,90%,55%), hsl(270,90%,55%), hsl(300,90%,55%), hsl(330,90%,55%),
+      hsl(360,90%,55%));
+  border:2px solid transparent;
+}
+.custom-color-wrap.selected{ border-color:var(--ink); }
+.custom-color-wrap input[type=color]{
+  -webkit-appearance:none; appearance:none;
+  position:absolute; top:0; left:0;
+  width:100%; height:100%; padding:0; margin:0; border:none;
+  cursor:pointer; background:none; opacity:0;
+}
+.custom-color-wrap input[type=color]::-webkit-color-swatch-wrapper{ padding:0; }
+.custom-color-wrap input[type=color]::-webkit-color-swatch{ border:none; }
+.custom-color-wrap input[type=color]::-moz-color-swatch{ border:none; }
 .danger-zone{ border:1px solid var(--sienna); border-radius:10px; padding:16px 20px; background:rgba(193,68,14,0.05); }
 .danger-zone p{ font-size:12.5px; color:var(--ink-soft); margin:0 0 10px; }
 
@@ -406,12 +417,8 @@ let tests = [];        // {id, name, date, createdAt}
 let testEntries = [];  // {id, testId, subjectId, score, deviation, note, createdAt}
 let testChartMetric = 'deviation';
 let expandedTestId = null;
-let editingTaskId = null;
 let flashcards = [];  // {id, term, meaning, subjectId, memorized, createdAt}
 let cardState = { idx:0, flipped:false };
-let cardFilterSubject = '';
-let cardShowArchived = false;
-let selectedCardIds = new Set();
 let reflections = []; // {id, type:'diary'|'class', date, mood, subjectId, understanding, content, createdAt}
 let settings = { dailyGoalMinutes: 60, lastRecipientEmail: '' };
 
@@ -738,12 +745,9 @@ function renderProgress(){
   const logHtml = recent.map(s=>{
     const subj = subjectById(s.subjectId);
     return `<div class="log-item" style="border-left-color:${subj?subj.color:'#999'}">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="left"><strong>${subj?escapeHtml(subj.name):'(削除済み科目)'}</strong>
-        <span style="color:var(--ink-soft)">${s.date} ・ ${Math.round(s.durationSec/60)}分</span></div>
-        <button class="del" data-id="${s.id}" title="削除">✕</button>
-      </div>
-      <input type="text" class="memo-input" data-session-memo="${s.id}" value="${escapeHtml(s.note||'')}" placeholder="メモを追加...">
+      <div class="left"><strong>${subj?escapeHtml(subj.name):'(削除済み科目)'}</strong>
+      <span style="color:var(--ink-soft)">${s.date} ・ ${Math.round(s.durationSec/60)}分</span></div>
+      <button class="del" data-id="${s.id}" title="削除">✕</button>
     </div>`;
   }).join('') || '<div class="empty">まだ記録がありません。タイマーを使って学習を記録しましょう。</div>';
 
@@ -770,12 +774,6 @@ function renderProgress(){
       sessions = sessions.filter(s=>s.id!==btn.dataset.id);
       await saveKey('sessions', sessions);
       renderProgress();
-    });
-  });
-  sec.querySelectorAll('[data-session-memo]').forEach(inp=>{
-    inp.addEventListener('change', async ()=>{
-      const s = sessions.find(x=>x.id===inp.dataset.sessionMemo);
-      if(s){ s.note = inp.value; await saveKey('sessions', sessions); }
     });
   });
 }
@@ -826,14 +824,12 @@ function renderTests(){
     const isOpen = expandedTestId===t.id;
     const entriesHtml = entries.map(e=>{
       const subj = subjectById(e.subjectId);
-      return `<div class="card-item" style="flex-direction:column;align-items:stretch;gap:6px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>${subj?escapeHtml(subj.name):'(科目未設定)'}</strong>
-            <span style="color:var(--ink-soft)">${e.score!=null?` ・ 点数 ${e.score}`:''}${e.deviation!=null?` ・ 偏差値 ${e.deviation}`:''}</span>
-          </div>
-          <button class="del" data-entry="${e.id}" title="削除">✕</button>
+      return `<div class="card-item">
+        <div><strong>${subj?escapeHtml(subj.name):'(科目未設定)'}</strong>
+          <span style="color:var(--ink-soft)">${e.score!=null?` ・ 点数 ${e.score}`:''}${e.deviation!=null?` ・ 偏差値 ${e.deviation}`:''}</span>
+          ${e.note?`<div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px;white-space:pre-wrap">${escapeHtml(e.note)}</div>`:''}
         </div>
-        <input type="text" class="memo-input" data-testentry-memo="${e.id}" value="${escapeHtml(e.note||'')}" placeholder="振り返り・ポイントを追加...">
+        <button class="del" data-entry="${e.id}" title="削除">✕</button>
       </div>`;
     }).join('') || '<div class="empty">まだ科目が追加されていません。</div>';
 
@@ -957,12 +953,6 @@ function renderTests(){
       renderTests();
     });
   });
-  sec.querySelectorAll('[data-testentry-memo]').forEach(inp=>{
-    inp.addEventListener('change', async ()=>{
-      const en = testEntries.find(x=>x.id===inp.dataset.testentryMemo);
-      if(en){ en.note = inp.value; await saveKey('testEntries', testEntries); }
-    });
-  });
   const md = document.getElementById('metricDeviation');
   const ms = document.getElementById('metricScore');
   if(md) md.addEventListener('click', ()=>{ testChartMetric='deviation'; renderTests(); });
@@ -1000,7 +990,6 @@ function renderGoals(){
           <input type="number" min="0" step="1" placeholder="達成量" id="rec-${g.id}">
           <button class="btn btn-ghost" data-record="${g.id}">記録する</button>
         </div>
-        <input type="text" class="memo-input" data-goal-memo="${g.id}" value="${escapeHtml(g.note||'')}" placeholder="メモ・ポイントを追加...">
       </div>
       <button class="goal-del" data-id="${g.id}" title="削除">✕</button>
     </div>`;
@@ -1060,34 +1049,18 @@ function renderGoals(){
       renderGoals();
     });
   });
-  sec.querySelectorAll('[data-goal-memo]').forEach(inp=>{
-    inp.addEventListener('change', async ()=>{
-      const g = goals.find(x=>x.id===inp.dataset.goalMemo);
-      if(g){ g.note = inp.value; await saveKey('goals', goals); }
-    });
-  });
 }
 
 /* ---------------- Flashcards ---------------- */
-function cardMatchesFilter(c){
-  if(cardFilterSubject==='') return true;
-  if(cardFilterSubject==='__none__') return !c.subjectId;
-  return c.subjectId===cardFilterSubject;
-}
-
 function renderCards(){
   const sec = document.getElementById('sec-cards');
   const options = subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-
-  const reviewCards = flashcards.filter(c=>cardMatchesFilter(c) && !c.archived);
-  const pool = reviewCards.filter(c=>!c.memorized);
-  const memorizedCount = reviewCards.length - pool.length;
+  const pool = flashcards.filter(c=>!c.memorized);
+  const memorizedCount = flashcards.length - pool.length;
 
   let reviewHtml;
-  if(reviewCards.length===0){
-    reviewHtml = flashcards.length===0
-      ? '<div class="empty">まだ単語がありません。下のフォームから追加してください。</div>'
-      : '<div class="empty">復習できるカードがありません(絞り込み範囲外か、すべてアーカイブされています)。</div>';
+  if(flashcards.length===0){
+    reviewHtml = '<div class="empty">まだ単語がありません。下のフォームから追加してください。</div>';
   } else if(pool.length===0){
     reviewHtml = `<div class="empty">🎉 すべて覚えました！お疲れさまでした。</div>
       <div style="text-align:center"><button class="btn btn-ghost" id="btnResetCards">もう一度復習する</button></div>`;
@@ -1111,54 +1084,21 @@ function renderCards(){
     `;
   }
 
-  const listCards = flashcards.filter(cardMatchesFilter).filter(c => cardShowArchived ? true : !c.archived);
-
-  function cardItemHtml(c){
+  const listHtml = flashcards.map(c=>{
     const subj = subjectById(c.subjectId);
-    return `<div class="card-item" style="${c.archived?'opacity:.55':''}">
-      <input type="checkbox" class="card-select" data-cid="${c.id}" ${selectedCardIds.has(c.id)?'checked':''} style="margin-right:2px">
-      <div style="flex:1"><strong>${escapeHtml(c.term)}</strong> <span style="color:var(--ink-soft)">— ${escapeHtml(c.meaning)}</span>${subj?` <span style="color:var(--ink-soft);font-size:11px">(${escapeHtml(subj.name)})</span>`:''}</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        ${c.archived?'<span class="badge pending">アーカイブ済</span>':''}
+    return `<div class="card-item">
+      <div><strong>${escapeHtml(c.term)}</strong> <span style="color:var(--ink-soft)">— ${escapeHtml(c.meaning)}</span>${subj?` <span style="color:var(--ink-soft);font-size:11px">(${escapeHtml(subj.name)})</span>`:''}</div>
+      <div style="display:flex;align-items:center;gap:10px">
         <span class="badge ${c.memorized?'memo':'pending'}">${c.memorized?'習得済み':'未習得'}</span>
         <button class="btn btn-ghost" data-toggle="${c.id}" style="padding:4px 12px;font-size:12px">${c.memorized?'未習得に戻す':'習得済みにする'}</button>
-        <button class="btn btn-ghost" data-archive="${c.id}" style="padding:4px 12px;font-size:12px">${c.archived?'アーカイブ解除':'アーカイブ'}</button>
         <button class="del" data-id="${c.id}" title="削除">✕</button>
       </div>
     </div>`;
-  }
-
-  let listHtml = '';
-  [...subjects, null].forEach(s=>{
-    const groupCards = listCards.filter(c => s ? c.subjectId===s.id : !c.subjectId);
-    if(groupCards.length===0) return;
-    const headerColor = s ? s.color : '#B0AC9B';
-    const headerName = s ? s.name : '(科目未設定)';
-    listHtml += `<div style="margin:18px 0 8px;display:flex;align-items:center;gap:8px">
-        <span style="width:10px;height:10px;border-radius:50%;background:${headerColor};display:inline-block;flex-shrink:0"></span>
-        <strong style="font-size:13.5px">${escapeHtml(headerName)}</strong>
-        <span style="color:var(--ink-soft);font-size:12px">(${groupCards.length}枚)</span>
-      </div>`;
-    listHtml += groupCards.map(cardItemHtml).join('');
-  });
-  if(!listHtml) listHtml = '<div class="empty">カードがまだありません。</div>';
-
-  const selCount = selectedCardIds.size;
+  }).join('');
 
   sec.innerHTML = `
     <div class="tape">単語帳</div>
-    <div class="sub">カードをタップしてめくり、覚えたかどうかを記録しましょう ・ 習得済み ${memorizedCount}/${reviewCards.length}</div>
-    <div class="field-row" style="margin-bottom:16px;flex-wrap:wrap">
-      <label style="font-size:13px;color:var(--ink-soft)">教科で絞り込み:</label>
-      <select id="cardFilter">
-        <option value="" ${cardFilterSubject===''?'selected':''}>すべての教科</option>
-        ${subjects.map(s=>`<option value="${s.id}" ${cardFilterSubject===s.id?'selected':''}>${escapeHtml(s.name)}</option>`).join('')}
-        <option value="__none__" ${cardFilterSubject==='__none__'?'selected':''}>(科目未設定)</option>
-      </select>
-      <label style="font-size:13px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;margin-left:10px">
-        <input type="checkbox" id="showArchived" ${cardShowArchived?'checked':''}>アーカイブ済みも表示
-      </label>
-    </div>
+    <div class="sub">カードをタップしてめくり、覚えたかどうかを記録しましょう ・ 習得済み ${memorizedCount}/${flashcards.length}</div>
     <div class="chart-wrap" style="margin-bottom:24px">${reviewHtml}</div>
     <div class="add-form">
       <input type="text" id="cardTerm" placeholder="表 (単語・問題)">
@@ -1166,36 +1106,10 @@ function renderCards(){
       <select id="cardSubject"><option value="">(科目未設定)</option>${options}</select>
       <button class="btn btn-start" id="btnAddCard">追加</button>
     </div>
-    <div class="log-title">カード一覧(教科別)</div>
-    ${selCount>0 ? `
-      <div class="add-form" style="margin-bottom:10px">
-        <span style="font-size:13px;font-weight:700">${selCount}件選択中</span>
-        <button class="btn btn-ghost" id="bulkMemorize" style="padding:6px 14px;font-size:12px">習得済みにする</button>
-        <button class="btn btn-ghost" id="bulkUnmemorize" style="padding:6px 14px;font-size:12px">未習得に戻す</button>
-        <button class="btn btn-ghost" id="bulkArchive" style="padding:6px 14px;font-size:12px">アーカイブする</button>
-        <button class="btn btn-ghost" id="bulkUnarchive" style="padding:6px 14px;font-size:12px">アーカイブ解除</button>
-        <button class="btn btn-ghost" id="bulkClear" style="padding:6px 14px;font-size:12px">選択解除</button>
-      </div>
-    ` : ''}
-    ${listHtml}
+    <div class="log-title">カード一覧</div>
+    ${listHtml || '<div class="empty">カードがまだありません。</div>'}
   `;
 
-  document.getElementById('cardFilter').addEventListener('change', e=>{
-    cardFilterSubject = e.target.value;
-    cardState = {idx:0, flipped:false};
-    renderCards();
-  });
-  document.getElementById('showArchived').addEventListener('change', e=>{
-    cardShowArchived = e.target.checked;
-    renderCards();
-  });
-  sec.querySelectorAll('.card-select').forEach(chk=>{
-    chk.addEventListener('change', ()=>{
-      const id = chk.dataset.cid;
-      if(chk.checked) selectedCardIds.add(id); else selectedCardIds.delete(id);
-      renderCards();
-    });
-  });
   const flashEl = document.getElementById('flashCard');
   if(flashEl){
     flashEl.addEventListener('click', ()=>{
@@ -1220,7 +1134,7 @@ function renderCards(){
   const btnKnown = document.getElementById('btnKnown');
   if(btnKnown) btnKnown.addEventListener('click', async (e)=>{
     e.stopPropagation();
-    const poolNow = flashcards.filter(c=>!c.memorized && !c.archived && cardMatchesFilter(c));
+    const poolNow = flashcards.filter(c=>!c.memorized);
     const card = poolNow[cardState.idx];
     if(card){ card.memorized = true; await saveKey('flashcards', flashcards); }
     cardState.flipped = false;
@@ -1232,15 +1146,9 @@ function renderCards(){
       if(c){ c.memorized = !c.memorized; await saveKey('flashcards', flashcards); renderCards(); }
     });
   });
-  sec.querySelectorAll('[data-archive]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const c = flashcards.find(x=>x.id===btn.dataset.archive);
-      if(c){ c.archived = !c.archived; await saveKey('flashcards', flashcards); renderCards(); }
-    });
-  });
   const btnReset = document.getElementById('btnResetCards');
   if(btnReset) btnReset.addEventListener('click', async ()=>{
-    flashcards.filter(c=>cardMatchesFilter(c) && !c.archived).forEach(c=>c.memorized=false);
+    flashcards.forEach(c=>c.memorized=false);
     await saveKey('flashcards', flashcards);
     cardState = {idx:0, flipped:false};
     renderCards();
@@ -1250,46 +1158,16 @@ function renderCards(){
     const meaning = document.getElementById('cardMeaning').value.trim();
     const subjectId = document.getElementById('cardSubject').value || null;
     if(!term || !meaning) return;
-    flashcards.push({id:uid(), term, meaning, subjectId, memorized:false, archived:false, createdAt:Date.now()});
+    flashcards.push({id:uid(), term, meaning, subjectId, memorized:false, createdAt:Date.now()});
     await saveKey('flashcards', flashcards);
     renderCards();
   });
   sec.querySelectorAll('.del').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       flashcards = flashcards.filter(c=>c.id!==btn.dataset.id);
-      selectedCardIds.delete(btn.dataset.id);
       await saveKey('flashcards', flashcards);
       renderCards();
     });
-  });
-  const bulkMemorize = document.getElementById('bulkMemorize');
-  if(bulkMemorize) bulkMemorize.addEventListener('click', async ()=>{
-    flashcards.forEach(c=>{ if(selectedCardIds.has(c.id)) c.memorized = true; });
-    await saveKey('flashcards', flashcards);
-    renderCards();
-  });
-  const bulkUnmemorize = document.getElementById('bulkUnmemorize');
-  if(bulkUnmemorize) bulkUnmemorize.addEventListener('click', async ()=>{
-    flashcards.forEach(c=>{ if(selectedCardIds.has(c.id)) c.memorized = false; });
-    await saveKey('flashcards', flashcards);
-    renderCards();
-  });
-  const bulkArchive = document.getElementById('bulkArchive');
-  if(bulkArchive) bulkArchive.addEventListener('click', async ()=>{
-    flashcards.forEach(c=>{ if(selectedCardIds.has(c.id)) c.archived = true; });
-    await saveKey('flashcards', flashcards);
-    renderCards();
-  });
-  const bulkUnarchive = document.getElementById('bulkUnarchive');
-  if(bulkUnarchive) bulkUnarchive.addEventListener('click', async ()=>{
-    flashcards.forEach(c=>{ if(selectedCardIds.has(c.id)) c.archived = false; });
-    await saveKey('flashcards', flashcards);
-    renderCards();
-  });
-  const bulkClear = document.getElementById('bulkClear');
-  if(bulkClear) bulkClear.addEventListener('click', ()=>{
-    selectedCardIds.clear();
-    renderCards();
   });
 }
 
@@ -1400,7 +1278,7 @@ function renderSchedule(){
 
   const groups = {};
   schedule.forEach(t=>{ (groups[t.date] = groups[t.date]||[]).push(t); });
-  const dates = Object.keys(groups).sort();
+  const dates = Object.keys(groups).sort().reverse();
   const today = todayStr();
 
   const groupsHtml = dates.map(date=>{
@@ -1410,38 +1288,15 @@ function renderSchedule(){
     });
     const overdue = date < today && items.some(i=>!i.done);
     const itemsHtml = items.map(t=>{
-      if(editingTaskId===t.id){
-        return `<div class="task-item">
-          <div class="task-item-row" style="flex-wrap:wrap">
-            <input type="date" id="editDate-${t.id}" value="${t.date}" style="width:150px">
-            <input type="time" id="editStart-${t.id}" value="${t.startTime||''}" style="width:110px">
-            <input type="time" id="editEnd-${t.id}" value="${t.endTime||''}" style="width:110px">
-            <select id="editSubject-${t.id}">
-              <option value="">(科目未設定)</option>
-              ${subjects.map(s=>`<option value="${s.id}" ${s.id===t.subjectId?'selected':''}>${escapeHtml(s.name)}</option>`).join('')}
-            </select>
-            <input type="text" id="editTitle-${t.id}" value="${escapeHtml(t.title)}" style="flex:1;min-width:140px">
-          </div>
-          <input type="text" id="editMemo-${t.id}" value="${escapeHtml(t.note||'')}" placeholder="メモ(任意)">
-          <div class="task-item-row">
-            <button class="btn btn-start" data-save="${t.id}" style="padding:6px 14px;font-size:12px">保存</button>
-            <button class="btn btn-ghost" data-cancel="${t.id}" style="padding:6px 14px;font-size:12px">キャンセル</button>
-          </div>
-        </div>`;
-      }
       const subj = subjectById(t.subjectId);
       const timeLabel = t.startTime ? `${t.startTime}${t.endTime ? '〜'+t.endTime : ''}` : '';
       return `<div class="task-item ${t.done?'done':''}">
-        <div class="task-item-row">
-          <input type="checkbox" data-id="${t.id}" class="chk" ${t.done?'checked':''}>
-          <span class="chip" style="background:${subj?subj.color:'#999'}"></span>
-          ${timeLabel ? `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft);flex-shrink:0">${timeLabel}</span>` : ''}
-          <span class="title">${escapeHtml(t.title)}${subj?` <span style="color:var(--ink-soft);font-size:12px">(${escapeHtml(subj.name)})</span>`:''}</span>
-          ${t.sessionId ? '<span class="badge memo" title="学習時間に記録されました">記録済</span>' : ''}
-          <button class="btn btn-ghost" data-edit="${t.id}" style="padding:3px 10px;font-size:11px">編集</button>
-          <button class="del" data-id="${t.id}" title="削除">✕</button>
-        </div>
-        <input type="text" class="memo-input" data-task-memo="${t.id}" value="${escapeHtml(t.note||'')}" placeholder="メモを追加...">
+        <input type="checkbox" data-id="${t.id}" class="chk" ${t.done?'checked':''}>
+        <span class="chip" style="background:${subj?subj.color:'#999'}"></span>
+        ${timeLabel ? `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft);flex-shrink:0">${timeLabel}</span>` : ''}
+        <span class="title">${escapeHtml(t.title)}${subj?` <span style="color:var(--ink-soft);font-size:12px">(${escapeHtml(subj.name)})</span>`:''}</span>
+        ${t.sessionId ? '<span class="badge memo" title="学習時間に記録されました">記録済</span>' : ''}
+        <button class="del" data-id="${t.id}" title="削除">✕</button>
       </div>`;
     }).join('');
     return `<div class="day-group ${overdue?'overdue':''}">
@@ -1459,7 +1314,6 @@ function renderSchedule(){
       <input type="time" id="taskEnd" style="width:110px">
       <select id="taskSubject">${options || '<option value="">(科目未設定)</option>'}</select>
       <input type="text" id="taskTitle" placeholder="やること (例: 第3章の問題演習)">
-      <input type="text" id="taskMemo" placeholder="メモ(任意)">
       <button class="btn btn-start" id="btnAddTask">追加</button>
     </div>
     <div class="mail-box">
@@ -1501,59 +1355,10 @@ function renderSchedule(){
     const subjectId = document.getElementById('taskSubject').value || null;
     const titleEl = document.getElementById('taskTitle');
     const title = titleEl.value.trim();
-    const note = document.getElementById('taskMemo').value.trim();
     if(!title) return;
-    schedule.push({id:uid(), date, startTime, endTime, subjectId, title, note, done:false});
+    schedule.push({id:uid(), date, startTime, endTime, subjectId, title, done:false});
     await saveKey('schedule', schedule);
     renderSchedule();
-  });
-  sec.querySelectorAll('[data-edit]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      editingTaskId = btn.dataset.edit;
-      renderSchedule();
-    });
-  });
-  sec.querySelectorAll('[data-cancel]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      editingTaskId = null;
-      renderSchedule();
-    });
-  });
-  sec.querySelectorAll('[data-save]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const id = btn.dataset.save;
-      const t = schedule.find(x=>x.id===id);
-      if(!t) return;
-      const date = document.getElementById(`editDate-${id}`).value || t.date;
-      const startTime = document.getElementById(`editStart-${id}`).value || '';
-      const endTime = document.getElementById(`editEnd-${id}`).value || '';
-      const subjectId = document.getElementById(`editSubject-${id}`).value || null;
-      const title = document.getElementById(`editTitle-${id}`).value.trim();
-      const note = document.getElementById(`editMemo-${id}`).value.trim();
-      if(!title) return;
-      if(t.sessionId){
-        sessions = sessions.filter(s=>s.id!==t.sessionId);
-        await saveKey('sessions', sessions);
-        t.sessionId = null;
-      }
-      t.date = date; t.startTime = startTime; t.endTime = endTime; t.subjectId = subjectId; t.title = title; t.note = note;
-      if(t.done && t.subjectId && t.startTime && t.endTime){
-        const durationSec = computeDurationSec(t.startTime, t.endTime);
-        if(durationSec > 0){
-          const session = await recordSession(t.subjectId, t.date, durationSec);
-          t.sessionId = session.id;
-        }
-      }
-      await saveKey('schedule', schedule);
-      editingTaskId = null;
-      renderSchedule();
-    });
-  });
-  sec.querySelectorAll('[data-task-memo]').forEach(inp=>{
-    inp.addEventListener('change', async ()=>{
-      const t = schedule.find(x=>x.id===inp.dataset.taskMemo);
-      if(t){ t.note = inp.value; await saveKey('schedule', schedule); }
-    });
   });
   sec.querySelectorAll('.chk').forEach(chk=>{
     chk.addEventListener('change', async ()=>{
@@ -1603,7 +1408,10 @@ function renderSettings(){
       <button class="del" data-id="${s.id}" title="削除">✕</button>
     </div>`).join('') || '<div class="empty">科目がありません。下のフォームから追加してください。</div>';
 
-  const palette = SUBJECT_COLORS.map(c=>`<div class="swatch ${c.hex===pendingColor?'selected':''}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.name}"></div>`).join('');
+  const isTemplateColor = SUBJECT_COLORS.some(c=>c.hex===pendingColor);
+  const palette = SUBJECT_COLORS.map(c=>`<div class="swatch ${c.hex===pendingColor?'selected':''}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.name}"></div>`).join('')
+    + `<div class="palette-divider"></div>`
+    + `<div class="custom-color-wrap ${!isTemplateColor?'selected':''}"><input type="color" id="customColor" value="${pendingColor}" title="カラーピッカーで選択"></div>`;
 
   sec.innerHTML = `
     <div class="tape">設定</div>
@@ -1657,6 +1465,10 @@ function renderSettings(){
 
   document.getElementById('palette').querySelectorAll('.swatch').forEach(sw=>{
     sw.addEventListener('click', ()=>{ pendingColor = sw.dataset.hex; renderSettings(); });
+  });
+  document.getElementById('customColor').addEventListener('change', (e)=>{
+    pendingColor = e.target.value;
+    renderSettings();
   });
   document.getElementById('btnAddSubject').addEventListener('click', async ()=>{
     const input = document.getElementById('newSubjectName');
