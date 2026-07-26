@@ -235,6 +235,7 @@ select, input[type=text], input[type=number], input[type=date], input[type=email
 .task-item.done{ opacity:.5; }
 .task-item.done .title{ text-decoration:line-through; }
 .task-item .chip{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.task-item .chip.other-chip{ border:1px solid var(--ink-soft); }
 .task-item .title{ flex:1; font-size:13.5px; }
 .task-item .del{ background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:15px; }
 .task-item .del:hover{ color:var(--sienna); }
@@ -259,6 +260,12 @@ input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); curso
   color:#fff; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.15);
 }
 .tt-block.done{ opacity:.45; }
+.tt-block.other{
+  color:#1A1A1A; border:1px solid var(--line);
+  background-image:repeating-linear-gradient(135deg, rgba(0,0,0,0.04) 0 8px, transparent 8px 16px);
+}
+.tt-block.other .del{ color:#1A1A1A; }
+.tt-block.other .tt-time{ opacity:.75; }
 .tt-block.done .tt-title{ text-decoration:line-through; }
 .tt-block-head{ display:flex; align-items:center; gap:6px; }
 .tt-block-head input[type=checkbox]{ width:14px; height:14px; flex-shrink:0; }
@@ -1328,7 +1335,7 @@ function exportTodaySchedulePdf(items){
       const timeLabel = t.startTime ? `${t.startTime}${t.endTime ? '〜'+t.endTime : ''}` : '時間未定';
       return `<tr class="${t.done?'pdf-done':''}">
         <td>${timeLabel}</td>
-        <td>${subj?escapeHtml(subj.name):'-'}</td>
+        <td>${t.isOther ? 'その他' : (subj?escapeHtml(subj.name):'-')}</td>
         <td>${escapeHtml(t.title)}</td>
         <td>${t.done?'完了':'未完了'}</td>
       </tr>`;
@@ -1349,11 +1356,14 @@ function renderTaskListHtml(items){
   return items.map(t=>{
     const subj = subjectById(t.subjectId);
     const timeLabel = t.startTime ? `${t.startTime}${t.endTime ? '〜'+t.endTime : ''}` : '';
+    const labelHtml = t.isOther
+      ? ` <span style="color:var(--ink-soft);font-size:12px">(その他)</span>`
+      : (subj ? ` <span style="color:var(--ink-soft);font-size:12px">(${escapeHtml(subj.name)})</span>` : '');
     return `<div class="task-item ${t.done?'done':''}">
       <input type="checkbox" data-id="${t.id}" class="chk" ${t.done?'checked':''}>
-      <span class="chip" style="background:${subj?subj.color:'#999'}"></span>
+      <span class="chip ${t.isOther?'other-chip':''}" style="background:${t.isOther?'#FFFFFF':(subj?subj.color:'#999')}"></span>
       ${timeLabel ? `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft);flex-shrink:0">${timeLabel}</span>` : ''}
-      <span class="title">${escapeHtml(t.title)}${subj?` <span style="color:var(--ink-soft);font-size:12px">(${escapeHtml(subj.name)})</span>`:''}</span>
+      <span class="title">${escapeHtml(t.title)}${labelHtml}</span>
       ${t.sessionId ? '<span class="badge memo" title="学習時間に記録されました">記録済</span>' : ''}
       <button class="del" data-id="${t.id}" title="削除">✕</button>
     </div>`;
@@ -1401,15 +1411,15 @@ function buildTimetableHtml(items){
     const height = Math.max(30, (t._end-t._start)*PPM);
     const widthPct = 100/totalCols;
     const leftPct = t._col*widthPct;
-    const color = subj?subj.color:'#8a8a8a';
-    return `<div class="tt-block ${t.done?'done':''}" style="top:${top}px;height:${height}px;left:calc(${leftPct}% + 3px);width:calc(${widthPct}% - 6px);background:${color}">
+    const color = t.isOther ? '#FFFFFF' : (subj?subj.color:'#8a8a8a');
+    return `<div class="tt-block ${t.done?'done':''} ${t.isOther?'other':''}" style="top:${top}px;height:${height}px;left:calc(${leftPct}% + 3px);width:calc(${widthPct}% - 6px);background:${color}">
       <div class="tt-block-head">
         <input type="checkbox" class="chk" data-id="${t.id}" ${t.done?'checked':''}>
         <span class="tt-time">${t.startTime}〜${t.endTime}</span>
         <button class="del" data-id="${t.id}" title="削除">✕</button>
       </div>
       <div class="tt-title">${escapeHtml(t.title)}</div>
-      ${subj ? `<div class="tt-subject">${escapeHtml(subj.name)}</div>` : ''}
+      ${t.isOther ? `<div class="tt-subject">その他</div>` : (subj ? `<div class="tt-subject">${escapeHtml(subj.name)}</div>` : '')}
       ${t.sessionId ? '<span class="badge memo" style="margin-top:4px" title="学習時間に記録されました">記録済</span>' : ''}
     </div>`;
   }).join('');
@@ -1433,7 +1443,8 @@ function buildTimetableHtml(items){
 
 function renderSchedule(){
   const sec = document.getElementById('sec-schedule');
-  const options = subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  const options = '<option value="__other__">その他の活動</option>'
+    + subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
 
   const groups = {};
   schedule.forEach(t=>{ (groups[t.date] = groups[t.date]||[]).push(t); });
@@ -1461,7 +1472,7 @@ function renderSchedule(){
       <input type="date" id="taskDate" value="${today}">
       <input type="time" id="taskStart" style="width:110px">
       <input type="time" id="taskEnd" style="width:110px">
-      <select id="taskSubject">${options || '<option value="">(科目未設定)</option>'}</select>
+      <select id="taskSubject">${options}</select>
       <input type="text" id="taskTitle" placeholder="やること (例: 第3章の問題演習)">
       <button class="btn btn-start" id="btnAddTask">追加</button>
     </div>
@@ -1469,9 +1480,9 @@ function renderSchedule(){
       <h3>Gmailで予定を送信</h3>
       <div class="field-row">
         <input type="email" id="mailTo" placeholder="送り先のメールアドレス" value="${escapeHtml(settings.lastRecipientEmail||'')}">
-        <button class="btn btn-ghost" id="btnSendMail" ${schedule.length===0?'disabled':''}>Gmailで送信</button>
+        <button class="btn btn-ghost" id="btnSendMail" ${(groups[today]||[]).length===0?'disabled':''}>Gmailで送信</button>
       </div>
-      <div class="note">Gmailの作成画面が新しいタブで開き、内容が入力された状態になります。内容を確認してから送信してください。</div>
+      <div class="note">今日（${today}）の予定だけを送信します。Gmailの作成画面が新しいタブで開き、内容が入力された状態になります。内容を確認してから送信してください。</div>
     </div>
     <div class="mail-box">
       <h3>今日の予定をPDFで保存</h3>
@@ -1488,19 +1499,19 @@ function renderSchedule(){
     settings.lastRecipientEmail = to;
     await saveKey('settings', settings);
 
-    const sortedDates = Object.keys(groups).sort();
-    let body = '学習スケジュールを共有します。\n\n';
-    sortedDates.forEach(date=>{
-      body += `【${date}】\n`;
-      const items = [...groups[date]].sort((a,b)=>(a.startTime||'').localeCompare(b.startTime||''));
-      items.forEach(t=>{
+    const todayItems = [...(groups[today]||[])].sort((a,b)=>(a.startTime||'').localeCompare(b.startTime||''));
+    let body = `今日（${today}）の学習スケジュールを共有します。\n\n`;
+    if(todayItems.length===0){
+      body += '（今日の予定はありません）\n';
+    }else{
+      todayItems.forEach(t=>{
         const subj = subjectById(t.subjectId);
         const timeLabel = t.startTime ? `${t.startTime}${t.endTime ? '〜'+t.endTime : ''} ` : '';
-        body += `・${timeLabel}${t.done ? '[完了] ' : ''}${t.title}${subj ? `(${subj.name})` : ''}\n`;
+        const label = t.isOther ? '(その他)' : (subj ? `(${subj.name})` : '');
+        body += `・${timeLabel}${t.done ? '[完了] ' : ''}${t.title}${label}\n`;
       });
-      body += '\n';
-    });
-    const subject = '学習スケジュールの共有';
+    }
+    const subject = `今日の学習スケジュール（${today}）`;
     const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(url, '_blank');
   });
@@ -1510,11 +1521,13 @@ function renderSchedule(){
     const date = document.getElementById('taskDate').value || today;
     const startTime = document.getElementById('taskStart').value || '';
     const endTime = document.getElementById('taskEnd').value || '';
-    const subjectId = document.getElementById('taskSubject').value || null;
+    const rawSubject = document.getElementById('taskSubject').value;
+    const isOther = rawSubject === '__other__';
+    const subjectId = isOther ? null : (rawSubject || null);
     const titleEl = document.getElementById('taskTitle');
     const title = titleEl.value.trim();
     if(!title) return;
-    schedule.push({id:uid(), date, startTime, endTime, subjectId, title, done:false});
+    schedule.push({id:uid(), date, startTime, endTime, subjectId, title, done:false, isOther});
     await saveKey('schedule', schedule);
     renderSchedule();
   });
@@ -1524,7 +1537,7 @@ function renderSchedule(){
       if(!t) return;
       t.done = chk.checked;
       if(t.done){
-        if(!t.sessionId && t.subjectId && t.startTime && t.endTime){
+        if(!t.sessionId && !t.isOther && t.subjectId && t.startTime && t.endTime){
           const durationSec = computeDurationSec(t.startTime, t.endTime);
           if(durationSec > 0){
             const session = await recordSession(t.subjectId, t.date, durationSec);
