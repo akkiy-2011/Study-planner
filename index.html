@@ -240,6 +240,36 @@ select, input[type=text], input[type=number], input[type=date], input[type=email
 .task-item .del:hover{ color:var(--sienna); }
 input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); cursor:pointer; }
 
+/* ---- Timetable (today) ---- */
+.timetable{ display:flex; margin-bottom:14px; }
+.timetable-grid{
+  position:relative; flex:1; margin-left:56px;
+  border-left:1px solid var(--line);
+  background:var(--paper);
+  border-radius:0 10px 10px 0;
+}
+.tt-hour-line{ position:absolute; left:0; right:0; border-top:1px dashed var(--line); }
+.tt-hour-label{
+  position:absolute; left:-56px; width:48px; text-align:right;
+  transform:translateY(-7px);
+  font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
+}
+.tt-block{
+  position:absolute; border-radius:8px; padding:6px 9px; box-sizing:border-box;
+  color:#fff; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.15);
+}
+.tt-block.done{ opacity:.45; }
+.tt-block.done .tt-title{ text-decoration:line-through; }
+.tt-block-head{ display:flex; align-items:center; gap:6px; }
+.tt-block-head input[type=checkbox]{ width:14px; height:14px; flex-shrink:0; }
+.tt-block .tt-time{ font-family:'JetBrains Mono',monospace; font-size:10.5px; opacity:.9; flex:1; }
+.tt-block .del{ background:none; border:none; color:#fff; opacity:.7; cursor:pointer; font-size:12px; flex-shrink:0; }
+.tt-block .del:hover{ opacity:1; }
+.tt-block .tt-title{ font-weight:700; font-size:12.5px; margin-top:3px; line-height:1.3; }
+.tt-block .tt-subject{ font-size:10.5px; opacity:.85; margin-top:2px; }
+.timetable-untimed{ margin-top:6px; }
+.tt-untimed-label{ font-size:12px; color:var(--ink-soft); margin:4px 0 6px 2px; }
+
 /* ---- Settings ---- */
 .settings-block{ margin-bottom:34px; }
 .settings-block h3{ font-size:14.5px; color:var(--indigo); margin:0 0 12px; }
@@ -303,6 +333,18 @@ input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); curso
 .mail-box h3{ font-size:14px; color:var(--indigo); margin:0 0 12px; }
 .mail-box input[type=email]{ flex:1; min-width:200px; }
 .mail-box .note{ font-size:12px; color:var(--ink-soft); margin-top:8px; }
+
+/* ---- Print (PDF export) ---- */
+#printArea{ display:none; }
+@media print{
+  body *{ visibility:hidden; }
+  #printArea, #printArea *{ visibility:visible; }
+  #printArea{ display:block !important; position:absolute; left:0; top:0; width:100%; padding:24px; }
+  #printArea table{ width:100%; border-collapse:collapse; font-size:13px; }
+  #printArea th, #printArea td{ border:1px solid #999; padding:8px 10px; text-align:left; }
+  #printArea th{ background:#2B3A67; color:#fff; }
+  #printArea tr.pdf-done td{ color:#888; text-decoration:line-through; }
+}
 
 /* ---- Heatmap ---- */
 .heatmap-wrap{ margin-top:26px; }
@@ -395,6 +437,7 @@ textarea{
 <div class="app" id="app">
   <div class="loading" id="loading">読み込み中…</div>
 </div>
+<div id="printArea"></div>
 
 <script>
 (function(){
@@ -1272,6 +1315,122 @@ function renderReflect(){
 }
 
 /* ---------------- Schedule ---------------- */
+function exportTodaySchedulePdf(items){
+  const today = todayStr();
+  const area = document.getElementById('printArea');
+  const sorted = [...items].sort((a,b)=>(a.startTime||'').localeCompare(b.startTime||''));
+
+  if(sorted.length===0){
+    area.innerHTML = `<h1 style="font-size:20px;margin-bottom:4px">学習予定表</h1><div style="font-size:13px;color:#555">${today}</div><p>今日の予定はありません。</p>`;
+  } else {
+    const rows = sorted.map(t=>{
+      const subj = subjectById(t.subjectId);
+      const timeLabel = t.startTime ? `${t.startTime}${t.endTime ? '〜'+t.endTime : ''}` : '時間未定';
+      return `<tr class="${t.done?'pdf-done':''}">
+        <td>${timeLabel}</td>
+        <td>${subj?escapeHtml(subj.name):'-'}</td>
+        <td>${escapeHtml(t.title)}</td>
+        <td>${t.done?'完了':'未完了'}</td>
+      </tr>`;
+    }).join('');
+    area.innerHTML = `
+      <h1 style="font-size:20px;margin-bottom:4px">学習予定表</h1>
+      <div style="font-size:13px;color:#555;margin-bottom:16px">${today}</div>
+      <table>
+        <thead><tr><th>時間</th><th>教科</th><th>やること</th><th>状態</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+  window.print();
+}
+
+function renderTaskListHtml(items){
+  return items.map(t=>{
+    const subj = subjectById(t.subjectId);
+    const timeLabel = t.startTime ? `${t.startTime}${t.endTime ? '〜'+t.endTime : ''}` : '';
+    return `<div class="task-item ${t.done?'done':''}">
+      <input type="checkbox" data-id="${t.id}" class="chk" ${t.done?'checked':''}>
+      <span class="chip" style="background:${subj?subj.color:'#999'}"></span>
+      ${timeLabel ? `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft);flex-shrink:0">${timeLabel}</span>` : ''}
+      <span class="title">${escapeHtml(t.title)}${subj?` <span style="color:var(--ink-soft);font-size:12px">(${escapeHtml(subj.name)})</span>`:''}</span>
+      ${t.sessionId ? '<span class="badge memo" title="学習時間に記録されました">記録済</span>' : ''}
+      <button class="del" data-id="${t.id}" title="削除">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function buildTimetableHtml(items){
+  const timed = items.filter(t=>t.startTime && t.endTime && timeToMinutes(t.endTime) > timeToMinutes(t.startTime));
+  const untimed = items.filter(t=>!(t.startTime && t.endTime) || timeToMinutes(t.endTime) <= timeToMinutes(t.startTime));
+  if(timed.length===0) return null;
+
+  timed.forEach(t=>{ t._start = timeToMinutes(t.startTime); t._end = timeToMinutes(t.endTime); });
+  timed.sort((a,b)=>a._start-b._start);
+
+  const minStart = Math.min(...timed.map(t=>t._start));
+  const maxEnd = Math.max(...timed.map(t=>t._end));
+  let startHour = Math.max(0, Math.floor(minStart/60));
+  let endHour = Math.min(24, Math.ceil(maxEnd/60));
+  if(endHour - startHour < 3) endHour = Math.min(24, startHour+3);
+
+  const PPM = 1.3; // pixels per minute
+  const totalHeight = (endHour-startHour)*60*PPM;
+
+  let active = [];
+  let maxCol = 0;
+  timed.forEach(t=>{
+    active = active.filter(a=>a.end > t._start);
+    const usedCols = new Set(active.map(a=>a.col));
+    let col = 0; while(usedCols.has(col)) col++;
+    t._col = col;
+    active.push({end:t._end, col});
+    maxCol = Math.max(maxCol, col);
+  });
+  const totalCols = maxCol+1;
+
+  let hourRows = '';
+  for(let h=startHour; h<=endHour; h++){
+    const top = (h-startHour)*60*PPM;
+    hourRows += `<div class="tt-hour-line" style="top:${top}px"></div><div class="tt-hour-label" style="top:${top}px">${String(h).padStart(2,'0')}:00</div>`;
+  }
+
+  const blocks = timed.map(t=>{
+    const subj = subjectById(t.subjectId);
+    const top = (t._start-startHour*60)*PPM;
+    const height = Math.max(30, (t._end-t._start)*PPM);
+    const widthPct = 100/totalCols;
+    const leftPct = t._col*widthPct;
+    const color = subj?subj.color:'#8a8a8a';
+    return `<div class="tt-block ${t.done?'done':''}" style="top:${top}px;height:${height}px;left:calc(${leftPct}% + 3px);width:calc(${widthPct}% - 6px);background:${color}">
+      <div class="tt-block-head">
+        <input type="checkbox" class="chk" data-id="${t.id}" ${t.done?'checked':''}>
+        <span class="tt-time">${t.startTime}〜${t.endTime}</span>
+        <button class="del" data-id="${t.id}" title="削除">✕</button>
+      </div>
+      <div class="tt-title">${escapeHtml(t.title)}</div>
+      ${subj ? `<div class="tt-subject">${escapeHtml(subj.name)}</div>` : ''}
+      ${t.sessionId ? '<span class="badge memo" style="margin-top:4px" title="学習時間に記録されました">記録済</span>' : ''}
+    </div>`;
+  }).join('');
+
+  const untimedHtml = untimed.length>0 ? `
+    <div class="timetable-untimed">
+      <div class="tt-untimed-label">時間未定</div>
+      ${renderTaskListHtml(untimed)}
+    </div>` : '';
+
+  return `
+    <div class="timetable">
+      <div class="timetable-grid" style="height:${totalHeight}px">
+        ${hourRows}
+        ${blocks}
+      </div>
+    </div>
+    ${untimedHtml}
+  `;
+}
+
 function renderSchedule(){
   const sec = document.getElementById('sec-schedule');
   const options = subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
@@ -1287,21 +1446,11 @@ function renderSchedule(){
       return (a.startTime||'').localeCompare(b.startTime||'');
     });
     const overdue = date < today && items.some(i=>!i.done);
-    const itemsHtml = items.map(t=>{
-      const subj = subjectById(t.subjectId);
-      const timeLabel = t.startTime ? `${t.startTime}${t.endTime ? '〜'+t.endTime : ''}` : '';
-      return `<div class="task-item ${t.done?'done':''}">
-        <input type="checkbox" data-id="${t.id}" class="chk" ${t.done?'checked':''}>
-        <span class="chip" style="background:${subj?subj.color:'#999'}"></span>
-        ${timeLabel ? `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft);flex-shrink:0">${timeLabel}</span>` : ''}
-        <span class="title">${escapeHtml(t.title)}${subj?` <span style="color:var(--ink-soft);font-size:12px">(${escapeHtml(subj.name)})</span>`:''}</span>
-        ${t.sessionId ? '<span class="badge memo" title="学習時間に記録されました">記録済</span>' : ''}
-        <button class="del" data-id="${t.id}" title="削除">✕</button>
-      </div>`;
-    }).join('');
+    const isToday = date === today;
+    const bodyHtml = isToday ? (buildTimetableHtml(items) || renderTaskListHtml(items)) : renderTaskListHtml(items);
     return `<div class="day-group ${overdue?'overdue':''}">
-      <div class="day-head">${date}${overdue?' ・ 期限超過':''}</div>
-      ${itemsHtml}
+      <div class="day-head">${date}${isToday?' ・ 今日':''}${overdue?' ・ 期限超過':''}</div>
+      ${bodyHtml}
     </div>`;
   }).join('') || '<div class="empty">予定はまだありません。下のフォームから追加してください。</div>';
 
@@ -1323,6 +1472,13 @@ function renderSchedule(){
         <button class="btn btn-ghost" id="btnSendMail" ${schedule.length===0?'disabled':''}>Gmailで送信</button>
       </div>
       <div class="note">Gmailの作成画面が新しいタブで開き、内容が入力された状態になります。内容を確認してから送信してください。</div>
+    </div>
+    <div class="mail-box">
+      <h3>今日の予定をPDFで保存</h3>
+      <div class="field-row">
+        <button class="btn btn-ghost" id="btnExportPdf" ${(groups[today]||[]).length===0?'disabled':''}>今日の予定をPDFでダウンロード</button>
+      </div>
+      <div class="note">印刷画面が開きます。送信先(送付先プリンター)で「PDFに保存」を選ぶと、PDFファイルとしてダウンロードできます。</div>
     </div>
     ${groupsHtml}
   `;
@@ -1348,6 +1504,8 @@ function renderSchedule(){
     const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(url, '_blank');
   });
+  const btnExportPdf = document.getElementById('btnExportPdf');
+  if(btnExportPdf) btnExportPdf.addEventListener('click', ()=>exportTodaySchedulePdf(groups[today]||[]));
   document.getElementById('btnAddTask').addEventListener('click', async ()=>{
     const date = document.getElementById('taskDate').value || today;
     const startTime = document.getElementById('taskStart').value || '';
