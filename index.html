@@ -191,12 +191,28 @@ select, input[type=text], input[type=number], input[type=date], input[type=email
   padding:24px 26px;
 }
 .chart-title{ font-weight:700; font-size:14px; margin-bottom:16px; color:var(--indigo); }
-.bars{ display:flex; align-items:flex-end; gap:14px; height:160px; }
-.bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
-.bar-stack{ width:70%; display:flex; flex-direction:column-reverse; border-radius:4px 4px 0 0; overflow:hidden; }
-.bar-seg{ width:100%; }
-.bar-col .day-label{ font-size:11.5px; color:var(--ink-soft); margin-top:8px; }
-.bar-col .day-total{ font-size:11px; color:var(--ink); font-family:'JetBrains Mono',monospace; margin-bottom:4px; }
+
+.stat-bar{
+  display:flex; background:var(--paper-2); border:1px solid var(--line); border-radius:12px;
+  overflow:hidden; margin:18px 0 30px;
+}
+.stat-cell{ flex:1; text-align:center; padding:16px 10px; position:relative; }
+.stat-cell + .stat-cell::before{
+  content:''; position:absolute; left:0; top:14px; bottom:14px; width:1px; background:var(--line);
+}
+.stat-label{ font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
+.stat-value{ font-size:20px; font-weight:800; color:var(--indigo); font-family:'JetBrains Mono',monospace; }
+.stat-unit{ font-size:12px; font-weight:600; margin-left:2px; color:var(--ink-soft); }
+
+.wk-chart-wrap{ position:relative; margin:0 0 10px; padding-left:44px; }
+.wk-grid-line{ position:absolute; left:44px; right:0; border-top:1px dashed var(--line); }
+.wk-grid-label{ position:absolute; left:-44px; top:-7px; width:38px; text-align:right; font-size:10.5px; color:var(--ink-soft); font-family:'JetBrains Mono',monospace; }
+.wk-bars-row{ position:relative; height:100%; display:flex; align-items:flex-end; gap:14px; }
+.wk-bar-col{ flex:1; height:100%; display:flex; align-items:flex-end; justify-content:center; }
+.wk-bar-stack{ width:56%; display:flex; flex-direction:column-reverse; border-radius:6px 6px 0 0; overflow:hidden; min-height:0; }
+.wk-bar-seg{ width:100%; }
+.wk-bar-labels-row{ display:flex; gap:14px; padding-left:44px; margin-bottom:34px; }
+.wk-bar-label-cell{ flex:1; text-align:center; font-size:11px; color:var(--ink-soft); line-height:1.5; }
 
 .subject-list{ margin-top:22px; display:flex; flex-direction:column; gap:10px; }
 .subject-row{ display:flex; align-items:center; gap:12px; }
@@ -354,29 +370,41 @@ input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); curso
 }
 
 /* ---- Pie chart (time allocation) ---- */
-.pie-wrap{ display:flex; gap:24px; align-items:center; flex-wrap:wrap; margin-top:4px; }
-.pie-chart{ width:150px; height:150px; border-radius:50%; flex-shrink:0; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06); }
-.pie-legend{ display:flex; flex-direction:column; gap:7px; flex:1; min-width:160px; }
-.pie-legend-row{ display:flex; align-items:center; gap:8px; font-size:13px; }
-.pie-swatch{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.pie-wrap{ display:flex; gap:28px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+.pie-svg{ flex-shrink:0; }
+.pie-slice-label{ fill:#fff; font-size:13px; font-weight:800; font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif; text-anchor:middle; dominant-baseline:middle; }
+.pie-legend{ display:flex; flex-direction:column; gap:9px; flex:1; min-width:140px; }
+.pie-legend-row{ display:flex; align-items:center; gap:9px; font-size:13.5px; }
+.pie-swatch{ width:11px; height:11px; border-radius:50%; flex-shrink:0; }
 .pie-legend-name{ flex:1; }
-.pie-legend-pct{ font-family:'JetBrains Mono',monospace; color:var(--ink-soft); }
 
-/* ---- Weekly goal ---- */
-.weekly-goal-row{ display:flex; justify-content:space-between; align-items:baseline; font-size:13px; margin-bottom:8px; }
-.weekly-goal-row .wg-value{ font-family:'JetBrains Mono',monospace; color:var(--indigo); font-weight:700; }
-.wg-track{ height:10px; background:var(--paper); border-radius:6px; overflow:hidden; }
-.wg-fill{ height:100%; background:var(--forest); border-radius:6px; transition:width .3s; }
+/* ---- Weekly goal (ring) ---- */
+.goal-ring-row{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+.goal-ring{
+  width:100px; height:100px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; padding:9px; box-sizing:border-box;
+}
+.goal-ring-inner{
+  width:100%; height:100%; border-radius:50%; background:var(--paper);
+  display:flex; align-items:center; justify-content:center;
+}
+.goal-ring-pct{ font-size:22px; font-weight:800; font-family:'JetBrains Mono',monospace; color:var(--ink); }
+.goal-ring-pct-sign{ font-size:12px; font-weight:700; color:var(--ink-soft); }
+.goal-ring-text{ flex:1; min-width:180px; font-size:14px; line-height:1.7; color:var(--ink); }
 
 /* ---- Countdown ---- */
-.cd-hero{ text-align:center; padding:12px 0 24px; border-bottom:1px solid var(--line); margin-bottom:16px; }
-.cd-hero-days{ font-size:54px; font-weight:800; color:var(--indigo); line-height:1; font-family:'JetBrains Mono',monospace; }
-.cd-hero-unit{ font-size:19px; font-weight:700; margin-left:4px; color:var(--indigo); }
-.cd-hero-title{ font-size:15px; font-weight:700; margin-top:8px; }
-.cd-hero-date{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+.cd-hero-row{ display:flex; align-items:center; gap:18px; padding-bottom:18px; border-bottom:1px solid var(--line); margin-bottom:14px; }
+.cd-hero-box{
+  width:88px; height:88px; border-radius:16px; flex-shrink:0;
+  background:linear-gradient(155deg, var(--gold), #d99a1f);
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:30px; font-weight:800; font-family:'JetBrains Mono',monospace;
+  box-shadow:0 4px 14px rgba(184,137,0,0.28);
+}
+.cd-hero-info .cd-hero-title{ font-size:15px; font-weight:700; }
+.cd-hero-info .cd-hero-date{ font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
 .cd-item{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--paper); border-radius:8px; margin-bottom:6px; }
 .cd-item.past{ opacity:.5; }
-.cd-item.hero-item{ border:1px solid var(--indigo-l); }
 .cd-item-main{ display:flex; flex-direction:column; gap:2px; }
 .cd-item-title{ font-size:13.5px; font-weight:600; }
 .cd-item-date{ font-size:12px; color:var(--ink-soft); cursor:pointer; }
@@ -762,52 +790,87 @@ function getLevel(sec, goalSec){
   if(ratio>=0.33) return 2;
   return 1;
 }
+function polarToCartesian(cx, cy, r, angleDeg){
+  const a = (angleDeg - 90) * Math.PI / 180.0;
+  return { x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) };
+}
+function describeArc(cx, cy, r, startAngle, endAngle){
+  const start = polarToCartesian(cx, cy, r, startAngle);
+  const end = polarToCartesian(cx, cy, r, endAngle);
+  const largeArcFlag = (endAngle - startAngle) <= 180 ? "0" : "1";
+  return ["M", cx, cy, "L", start.x, start.y, "A", r, r, 0, largeArcFlag, 1, end.x, end.y, "Z"].join(" ");
+}
+function formatJpDate(dateStr){
+  const [y,m,d] = dateStr.split('-');
+  return `${y}年${m}月${d}日`;
+}
+
 function buildPieChartHtml(){
   const totals = {};
   sessions.forEach(s=>{ totals[s.subjectId] = (totals[s.subjectId]||0) + s.durationSec; });
-  const entries = subjects.map(s=>({subj:s, sec:totals[s.id]||0})).filter(e=>e.sec>0).sort((a,b)=>b.sec-a.sec);
-  const grandTotal = entries.reduce((a,e)=>a+e.sec,0);
+  const allEntries = subjects.map(s=>({subj:s, sec:totals[s.id]||0}));
+  const activeEntries = allEntries.filter(e=>e.sec>0).sort((a,b)=>b.sec-a.sec);
+  const grandTotal = activeEntries.reduce((a,e)=>a+e.sec,0);
   if(grandTotal===0){
     return '<div class="empty">まだ学習記録がありません。タイマーを使って記録しましょう。</div>';
   }
+  const cx=100, cy=100, r=96;
   let acc = 0;
-  const stops = entries.map(e=>{
+  const slices = activeEntries.map(e=>{
     const pct = e.sec/grandTotal*100;
-    const start = acc; acc += pct;
-    return `${e.subj.color} ${start.toFixed(2)}% ${acc.toFixed(2)}%`;
-  }).join(', ');
-  const legend = entries.map(e=>{
-    const pct = Math.round(e.sec/grandTotal*100);
+    const startAngle = acc/100*360;
+    acc += pct;
+    const endAngle = acc/100*360;
+    const midAngle = (startAngle+endAngle)/2;
+    const labelPos = polarToCartesian(cx, cy, r*0.62, midAngle);
+    return { pathD: describeArc(cx,cy,r,startAngle,endAngle), color:e.subj.color, name:e.subj.name, pct, labelPos };
+  });
+  const pathsHtml = slices.map(sl=>`<path d="${sl.pathD}" fill="${sl.color}"></path>`).join('');
+  const labelsHtml = slices.filter(sl=>sl.pct>=6).map(sl=>
+    `<text x="${sl.labelPos.x.toFixed(1)}" y="${sl.labelPos.y.toFixed(1)}" font-size="15" font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="middle">${Math.round(sl.pct)}%</text>`
+  ).join('');
+  const legend = allEntries.map(e=>{
     return `<div class="pie-legend-row">
       <span class="pie-swatch" style="background:${e.subj.color}"></span>
       <span class="pie-legend-name">${escapeHtml(e.subj.name)}</span>
-      <span class="pie-legend-pct">${pct}% ・ ${Math.round(e.sec/60)}分</span>
     </div>`;
   }).join('');
   return `
     <div class="pie-wrap">
-      <div class="pie-chart" style="background:conic-gradient(${stops})"></div>
+      <svg viewBox="0 0 200 200" width="170" height="170" class="pie-svg">${pathsHtml}${labelsHtml}</svg>
       <div class="pie-legend">${legend}</div>
     </div>
   `;
 }
 
-function buildWeeklyGoalHtml(){
+function buildGoalRingHtml(){
   const {startStr, endStr} = thisWeekRange();
   const weekSec = sessions.filter(s=>s.date>=startStr && s.date<=endStr).reduce((a,s)=>a+s.durationSec,0);
   const goalMin = settings.weeklyGoalMinutes || 0;
-  const goalSec = goalMin*60;
-  const pct = goalSec>0 ? Math.min(100, Math.round(weekSec/goalSec*100)) : 0;
+  const weekMin = Math.round(weekSec/60);
+  const hasGoal = goalMin > 0;
+  const pct = hasGoal ? Math.min(100, Math.round(weekSec/60/goalMin*100)) : 100;
+  const rainbow = "conic-gradient(from 0deg, hsl(0,90%,55%), hsl(60,90%,55%), hsl(120,90%,55%), hsl(180,90%,55%), hsl(240,90%,55%), hsl(300,90%,55%), hsl(360,90%,55%))";
+  const ringBg = `conic-gradient(transparent 0% ${pct}%, var(--paper-2) ${pct}% 100%), ${rainbow}`;
+  const message = hasGoal
+    ? (pct>=100
+        ? `今週の目標を達成しました！<br>${weekMin}分 / ${goalMin}分`
+        : `今週 ${weekMin}分 / 目標 ${goalMin}分<br>あと${Math.max(0,goalMin-weekMin)}分で目標達成です！`)
+    : `1週間の目標を設定して<br>100%達成を目指そう！`;
   return `
-    <div class="weekly-goal-row">
-      <div>${startStr} 〜 ${endStr}</div>
-      <div class="wg-value">${Math.round(weekSec/60)} / ${goalMin}分 (${pct}%)</div>
+    <div class="goal-ring-row">
+      <div class="goal-ring" style="background:${ringBg}">
+        <div class="goal-ring-inner">
+          <div class="goal-ring-pct">${pct}<span class="goal-ring-pct-sign">%</span></div>
+        </div>
+      </div>
+      <div class="goal-ring-text">${message}</div>
     </div>
-    <div class="wg-track"><div class="wg-fill" style="width:${pct}%"></div></div>
-    <div class="field-row" style="margin-top:12px">
+    <button class="btn btn-ghost" id="btnToggleGoalEdit" style="margin-top:14px">${hasGoal?'目標を編集':'目標を設定する'}</button>
+    <div class="field-row" id="goalEditRow" style="display:none;margin-top:12px">
       <input type="number" id="weeklyGoalInput" min="0" step="10" value="${goalMin}" style="width:100px">
       <span class="sub">分/週の目標</span>
-      <button class="btn btn-ghost" id="btnSaveWeeklyGoal">保存</button>
+      <button class="btn btn-start" id="btnSaveWeeklyGoal">保存</button>
     </div>
   `;
 }
@@ -842,36 +905,45 @@ function buildCountdownHtml(){
     const hero = sorted.find(c=>c.id===heroId);
     const diff = Math.round((new Date(hero.date+'T00:00:00') - new Date(today+'T00:00:00'))/86400000);
     heroHtml = `
-      <div class="cd-hero">
-        <div class="cd-hero-days">${diff===0 ? '今日' : `${diff}<span class="cd-hero-unit">日</span>`}</div>
-        <div class="cd-hero-title">${escapeHtml(hero.title)}</div>
-        <div class="cd-hero-date">${hero.date}</div>
+      <div class="cd-hero-row">
+        <div class="cd-hero-box">${diff===0 ? '今日' : diff}</div>
+        <div class="cd-hero-info">
+          <div class="cd-hero-title">${escapeHtml(hero.title)}</div>
+          <div class="cd-hero-date">${formatJpDate(hero.date)}</div>
+        </div>
       </div>
     `;
   } else if(countdowns.length>0){
     heroHtml = '<div class="empty" style="margin-bottom:10px">今後の予定はありません。</div>';
   }
 
-  const listHtml = sorted.map(c=>{
+  const restItems = sorted.filter(c=>c.id!==heroId);
+  const listHtml = restItems.map(c=>{
     const isPast = c.date < today;
     const diff = Math.round((new Date(c.date+'T00:00:00') - new Date(today+'T00:00:00'))/86400000);
     const dateDisplay = editingCountdownId===c.id
       ? `<input type="date" class="cd-date-input" data-id="${c.id}" value="${c.date}">`
       : `<span class="cd-item-date" data-toggle-edit="${c.id}">${c.date}${isPast?' ・ 終了':` ・ 残り${diff}日`}</span>`;
-    return `<div class="cd-item ${isPast?'past':''} ${c.id===heroId?'hero-item':''}">
+    return `<div class="cd-item ${isPast?'past':''}">
       <div class="cd-item-main">
         <div class="cd-item-title">${escapeHtml(c.title)}</div>
         ${dateDisplay}
       </div>
       <button class="cd-del" data-id="${c.id}" title="削除">✕</button>
     </div>`;
-  }).join('') || '<div class="empty">まだアクティビティがありません。下から追加してください。</div>';
+  }).join('');
 
   return { heroHtml, listHtml };
 }
 
 function renderProgress(){
   const sec = document.getElementById('sec-progress');
+  const today = todayStr();
+  const thisMonth = today.slice(0,7);
+  const todaySec = sessions.filter(s=>s.date===today).reduce((a,s)=>a+s.durationSec,0);
+  const monthSec = sessions.filter(s=>s.date.slice(0,7)===thisMonth).reduce((a,s)=>a+s.durationSec,0);
+  const totalSec = sessions.reduce((a,s)=>a+s.durationSec,0);
+
   const days = last7Days();
   const dayTotals = days.map(d=>{
     const daySessions = sessions.filter(s=>s.date===d);
@@ -880,35 +952,33 @@ function renderProgress(){
     const total = daySessions.reduce((a,s)=>a+s.durationSec,0);
     return {date:d, total, bySubject};
   });
-  const maxSec = Math.max(60*30, ...dayTotals.map(d=>d.total));
+  const maxSec = Math.max(...dayTotals.map(d=>d.total), 3600);
+  const maxHours = Math.max(1, Math.ceil(maxSec/3600));
+  const chartH = 190;
+
+  const gridHtml = Array.from({length:maxHours+1}, (_, h)=>{
+    const bottomPct = h/maxHours*100;
+    const label = h===0 ? '0分' : `${h}時間`;
+    return `<div class="wk-grid-line" style="bottom:${bottomPct}%"><span class="wk-grid-label">${label}</span></div>`;
+  }).join('');
 
   const barsHtml = dayTotals.map(d=>{
-    const h = maxSec>0 ? Math.max(2, Math.round(d.total/maxSec*130)) : 2;
+    const hPx = maxHours>0 ? (d.total/(maxHours*3600))*chartH : 0;
     const segs = Object.entries(d.bySubject).map(([subId, secs])=>{
       const subj = subjectById(subId);
-      const segH = d.total>0 ? Math.round(secs/d.total*h) : 0;
-      return `<div class="bar-seg" style="height:${segH}px;background:${subj?subj.color:'#999'}"></div>`;
+      const segPct = d.total>0 ? (secs/d.total*100) : 0;
+      return `<div class="wk-bar-seg" style="height:${segPct}%;background:${subj?subj.color:'#999'}"></div>`;
     }).join('');
-    const dow = WEEKDAY_JP[new Date(d.date+'T00:00:00').getDay()];
-    return `<div class="bar-col">
-      <div class="day-total">${d.total>0?Math.round(d.total/60):''}</div>
-      <div class="bar-stack" style="height:${h}px">${segs}</div>
-      <div class="day-label">${dow}</div>
+    return `<div class="wk-bar-col">
+      <div class="wk-bar-stack" style="height:${Math.max(0,hPx).toFixed(1)}px">${segs}</div>
     </div>`;
   }).join('');
 
-  const totals = {};
-  sessions.forEach(s=>{ totals[s.subjectId] = (totals[s.subjectId]||0) + s.durationSec; });
-  const maxSubjTotal = Math.max(1, ...Object.values(totals));
-  const subjectRows = subjects.map(s=>{
-    const t = totals[s.id]||0;
-    const pct = Math.round(t/maxSubjTotal*100);
-    return `<div class="subject-row">
-      <div class="name">${escapeHtml(s.name)}</div>
-      <div class="track"><div class="fill" style="width:${pct}%;background:${s.color}"></div></div>
-      <div class="val">${Math.round(t/60)}分</div>
-    </div>`;
-  }).join('') || '<div class="empty">まだ科目がありません。設定タブから追加してください。</div>';
+  const labelsHtml = dayTotals.map(d=>{
+    const dow = WEEKDAY_JP[new Date(d.date+'T00:00:00').getDay()];
+    const mmdd = `${parseInt(d.date.slice(5,7),10)}/${parseInt(d.date.slice(8,10),10)}`;
+    return `<div class="wk-bar-label-cell">${mmdd}<br>${dow}</div>`;
+  }).join('');
 
   const recent = [...sessions].sort((a,b)=>b.createdAt-a.createdAt).slice(0,12);
   const logHtml = recent.map(s=>{
@@ -923,30 +993,34 @@ function renderProgress(){
   const { heroHtml, listHtml: countdownListHtml } = buildCountdownHtml();
 
   sec.innerHTML = `
-    <div class="tape">進捗</div>
-    <div class="sub">直近7日間の学習時間と、科目別の累計です</div>
-    <div class="chart-wrap">
-      <div class="chart-title">週間学習時間(分)</div>
-      <div class="bars">${barsHtml}</div>
+    <div class="tape">学習推移</div>
+    <div class="stat-bar">
+      <div class="stat-cell"><div class="stat-label">今日</div><div class="stat-value">${Math.round(todaySec/3600)}<span class="stat-unit">時間</span></div></div>
+      <div class="stat-cell"><div class="stat-label">今月</div><div class="stat-value">${Math.round(monthSec/3600)}<span class="stat-unit">時間</span></div></div>
+      <div class="stat-cell"><div class="stat-label">総学習時間</div><div class="stat-value">${Math.round(totalSec/3600)}<span class="stat-unit">時間</span></div></div>
     </div>
-    <div class="chart-wrap">
-      <div class="chart-title">今週の目標</div>
-      ${buildWeeklyGoalHtml()}
+    <div class="wk-chart-wrap" style="height:${chartH}px">
+      ${gridHtml}
+      <div class="wk-bars-row">${barsHtml}</div>
     </div>
-    <div class="chart-wrap">
-      <div class="chart-title">時間配分（教科別）</div>
+    <div class="wk-bar-labels-row">${labelsHtml}</div>
+    <div class="chart-wrap" style="margin-top:34px">
+      <div class="chart-title">時間配分</div>
       ${buildPieChartHtml()}
     </div>
-    <div class="subject-list">${subjectRows}</div>
     <div class="chart-wrap" style="margin-top:24px">
       <div class="chart-title">カウントダウン</div>
       ${heroHtml}
-      <div class="field-row">
-        <input type="text" id="cdTitle" placeholder="アクティビティ名（例：期末テスト）" style="flex:1;min-width:180px">
+      ${countdownListHtml ? `<div style="margin-top:14px">${countdownListHtml}</div>` : ''}
+      <div class="field-row" style="margin-top:14px">
+        <input type="text" id="cdTitle" placeholder="アクティビティ名（例：入試）" style="flex:1;min-width:180px">
         <input type="date" id="cdDate">
         <button class="btn btn-start" id="btnAddCountdown">追加</button>
       </div>
-      <div style="margin-top:14px">${countdownListHtml}</div>
+    </div>
+    <div class="chart-wrap" style="margin-top:24px">
+      <div class="chart-title">今週の目標</div>
+      ${buildGoalRingHtml()}
     </div>
     <div class="log-title">最近の記録</div>
     <div id="logList">${logHtml}</div>
@@ -957,6 +1031,11 @@ function renderProgress(){
       await saveKey('sessions', sessions);
       renderProgress();
     });
+  });
+  const btnToggleGoalEdit = document.getElementById('btnToggleGoalEdit');
+  if(btnToggleGoalEdit) btnToggleGoalEdit.addEventListener('click', ()=>{
+    const row = document.getElementById('goalEditRow');
+    row.style.display = row.style.display==='none' ? 'flex' : 'none';
   });
   const btnSaveWeeklyGoal = document.getElementById('btnSaveWeeklyGoal');
   if(btnSaveWeeklyGoal) btnSaveWeeklyGoal.addEventListener('click', async ()=>{
