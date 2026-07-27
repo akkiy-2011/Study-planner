@@ -353,18 +353,35 @@ input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); curso
   #printArea tr.pdf-done td{ color:#888; text-decoration:line-through; }
 }
 
-/* ---- Heatmap ---- */
-.heatmap-wrap{ margin-top:26px; }
-.hm-cols{ display:flex; gap:3px; overflow-x:auto; padding-bottom:6px; }
-.hm-col{ display:flex; flex-direction:column; gap:3px; }
-.hm-cell{ width:12px; height:12px; border-radius:3px; background:var(--paper); border:1px solid var(--line); }
-.hm-cell.blank{ border:none; background:transparent; }
-.hm-cell.lvl1{ background:rgba(63,108,81,0.28); border-color:transparent; }
-.hm-cell.lvl2{ background:rgba(63,108,81,0.52); border-color:transparent; }
-.hm-cell.lvl3{ background:rgba(63,108,81,0.76); border-color:transparent; }
-.hm-cell.lvl4{ background:var(--forest); border-color:transparent; }
-.hm-legend{ display:flex; align-items:center; gap:5px; margin-top:10px; font-size:11.5px; color:var(--ink-soft); }
-.hm-legend .hm-cell{ width:11px; height:11px; }
+/* ---- Pie chart (time allocation) ---- */
+.pie-wrap{ display:flex; gap:24px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+.pie-chart{ width:150px; height:150px; border-radius:50%; flex-shrink:0; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06); }
+.pie-legend{ display:flex; flex-direction:column; gap:7px; flex:1; min-width:160px; }
+.pie-legend-row{ display:flex; align-items:center; gap:8px; font-size:13px; }
+.pie-swatch{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.pie-legend-name{ flex:1; }
+.pie-legend-pct{ font-family:'JetBrains Mono',monospace; color:var(--ink-soft); }
+
+/* ---- Weekly goal ---- */
+.weekly-goal-row{ display:flex; justify-content:space-between; align-items:baseline; font-size:13px; margin-bottom:8px; }
+.weekly-goal-row .wg-value{ font-family:'JetBrains Mono',monospace; color:var(--indigo); font-weight:700; }
+.wg-track{ height:10px; background:var(--paper); border-radius:6px; overflow:hidden; }
+.wg-fill{ height:100%; background:var(--forest); border-radius:6px; transition:width .3s; }
+
+/* ---- Countdown ---- */
+.cd-hero{ text-align:center; padding:12px 0 24px; border-bottom:1px solid var(--line); margin-bottom:16px; }
+.cd-hero-days{ font-size:54px; font-weight:800; color:var(--indigo); line-height:1; font-family:'JetBrains Mono',monospace; }
+.cd-hero-unit{ font-size:19px; font-weight:700; margin-left:4px; color:var(--indigo); }
+.cd-hero-title{ font-size:15px; font-weight:700; margin-top:8px; }
+.cd-hero-date{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+.cd-item{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--paper); border-radius:8px; margin-bottom:6px; }
+.cd-item.past{ opacity:.5; }
+.cd-item.hero-item{ border:1px solid var(--indigo-l); }
+.cd-item-main{ display:flex; flex-direction:column; gap:2px; }
+.cd-item-title{ font-size:13.5px; font-weight:600; }
+.cd-item-date{ font-size:12px; color:var(--ink-soft); cursor:pointer; }
+.cd-item-date:hover{ text-decoration:underline; }
+.cd-date-input{ font-size:12px; padding:2px 4px; }
 
 /* ---- Celebration ---- */
 .celebrate-overlay{
@@ -410,6 +427,25 @@ input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); curso
 .badge{ font-size:11px; padding:2px 9px; border-radius:10px; flex-shrink:0; }
 .badge.memo{ background:rgba(63,108,81,0.18); color:var(--forest); }
 .badge.pending{ background:rgba(184,137,0,0.18); color:var(--gold); }
+.badge.archived-badge{ background:rgba(90,90,90,0.14); color:var(--ink-soft); }
+.card-item.archived{ opacity:.6; }
+.card-item .card-main{ display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+.card-item .card-main input[type=checkbox]{ flex-shrink:0; }
+.card-item .card-text{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.card-item .card-actions{ display:flex; align-items:center; gap:8px; flex-shrink:0; flex-wrap:wrap; }
+.bulk-bar{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:10px 14px; background:var(--paper-2); border:1px solid var(--line); border-radius:8px; margin-bottom:10px;
+}
+.bulk-bar label{ display:flex; align-items:center; gap:6px; font-size:13px; }
+.bulk-bar .del-bulk{
+  background:transparent; color:var(--sienna); border:1px solid rgba(193,68,14,0.4);
+  border-radius:8px; padding:6px 14px; font-size:13px; cursor:pointer;
+}
+.bulk-bar .del-bulk:disabled, .bulk-bar button:disabled{ opacity:.4; cursor:not-allowed; }
+.cards-toolbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin:28px 0 12px; }
+.cards-toolbar .log-title{ margin:0; }
+.cards-toolbar label{ font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:5px; font-weight:400; }
 
 /* ---- Reflect (diary / class review) ---- */
 textarea{
@@ -467,16 +503,26 @@ let tests = [];        // {id, name, date, createdAt}
 let testEntries = [];  // {id, testId, subjectId, score, deviation, note, createdAt}
 let testChartMetric = 'deviation';
 let expandedTestId = null;
-let flashcards = [];  // {id, term, meaning, subjectId, memorized, createdAt}
+let flashcards = [];  // {id, term, meaning, subjectId, memorized, archived, createdAt}
 let cardState = { idx:0, flipped:false };
+let cardSelection = new Set();
+let showArchivedCards = false;
+let countdowns = []; // {id, title, date, createdAt}
+let editingCountdownId = null;
 let reflections = []; // {id, type:'diary'|'class', date, mood, subjectId, understanding, content, createdAt}
-let settings = { dailyGoalMinutes: 60, lastRecipientEmail: '' };
+let settings = { dailyGoalMinutes: 60, lastRecipientEmail: '', weeklyGoalMinutes: 300 };
 
 let timerState = { running:false, startedAt:null, elapsedMs:0, subjectId:null };
 let timerInterval = null;
 
 function uid(){ return Math.random().toString(36).slice(2,10); }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+function dateToStr(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function todayStr(){ return dateToStr(new Date()); }
 function pad(n){ return String(n).padStart(2,'0'); }
 
 function calcStreak(){
@@ -539,7 +585,9 @@ async function loadAll(){
   testEntries = await loadKey('testEntries', []);
   flashcards = await loadKey('flashcards', []);
   reflections = await loadKey('reflections', []);
-  settings = await loadKey('settings', {dailyGoalMinutes:60, lastRecipientEmail:''});
+  settings = await loadKey('settings', {dailyGoalMinutes:60, lastRecipientEmail:'', weeklyGoalMinutes:300});
+  if(settings.weeklyGoalMinutes === undefined) settings.weeklyGoalMinutes = 300;
+  countdowns = await loadKey('countdowns', []);
 }
 
 function subjectById(id){ return subjects.find(s=>s.id===id); }
@@ -714,42 +762,113 @@ function getLevel(sec, goalSec){
   if(ratio>=0.33) return 2;
   return 1;
 }
-function buildHeatmapHtml(weeks){
-  const dateSec = {};
-  sessions.forEach(s=>{ dateSec[s.date] = (dateSec[s.date]||0) + s.durationSec; });
-  const goalSec = (settings.dailyGoalMinutes||0)*60;
-  const totalDays = weeks*7;
-  const end = new Date(todayStr()+'T00:00:00');
-  const days = [];
-  for(let i=totalDays-1;i>=0;i--){
-    const d = new Date(end); d.setDate(d.getDate()-i);
-    days.push(d.toISOString().slice(0,10));
+function buildPieChartHtml(){
+  const totals = {};
+  sessions.forEach(s=>{ totals[s.subjectId] = (totals[s.subjectId]||0) + s.durationSec; });
+  const entries = subjects.map(s=>({subj:s, sec:totals[s.id]||0})).filter(e=>e.sec>0).sort((a,b)=>b.sec-a.sec);
+  const grandTotal = entries.reduce((a,e)=>a+e.sec,0);
+  if(grandTotal===0){
+    return '<div class="empty">まだ学習記録がありません。タイマーを使って記録しましょう。</div>';
   }
-  const firstDow = new Date(days[0]+'T00:00:00').getDay();
-  const padded = Array(firstDow).fill(null).concat(days);
-  const cols = [];
-  for(let i=0;i<padded.length;i+=7){ cols.push(padded.slice(i,i+7)); }
-  return cols.map(col=>{
-    const cellsHtml = col.map(date=>{
-      if(!date) return '<div class="hm-cell blank"></div>';
-      const sec = dateSec[date]||0;
-      const lvl = getLevel(sec, goalSec);
-      const title = `${date} ・ ${Math.round(sec/60)}分`;
-      return `<div class="hm-cell ${lvl>0?'lvl'+lvl:''}" title="${title}"></div>`;
-    }).join('');
-    return `<div class="hm-col">${cellsHtml}</div>`;
+  let acc = 0;
+  const stops = entries.map(e=>{
+    const pct = e.sec/grandTotal*100;
+    const start = acc; acc += pct;
+    return `${e.subj.color} ${start.toFixed(2)}% ${acc.toFixed(2)}%`;
+  }).join(', ');
+  const legend = entries.map(e=>{
+    const pct = Math.round(e.sec/grandTotal*100);
+    return `<div class="pie-legend-row">
+      <span class="pie-swatch" style="background:${e.subj.color}"></span>
+      <span class="pie-legend-name">${escapeHtml(e.subj.name)}</span>
+      <span class="pie-legend-pct">${pct}% ・ ${Math.round(e.sec/60)}分</span>
+    </div>`;
   }).join('');
+  return `
+    <div class="pie-wrap">
+      <div class="pie-chart" style="background:conic-gradient(${stops})"></div>
+      <div class="pie-legend">${legend}</div>
+    </div>
+  `;
 }
+
+function buildWeeklyGoalHtml(){
+  const {startStr, endStr} = thisWeekRange();
+  const weekSec = sessions.filter(s=>s.date>=startStr && s.date<=endStr).reduce((a,s)=>a+s.durationSec,0);
+  const goalMin = settings.weeklyGoalMinutes || 0;
+  const goalSec = goalMin*60;
+  const pct = goalSec>0 ? Math.min(100, Math.round(weekSec/goalSec*100)) : 0;
+  return `
+    <div class="weekly-goal-row">
+      <div>${startStr} 〜 ${endStr}</div>
+      <div class="wg-value">${Math.round(weekSec/60)} / ${goalMin}分 (${pct}%)</div>
+    </div>
+    <div class="wg-track"><div class="wg-fill" style="width:${pct}%"></div></div>
+    <div class="field-row" style="margin-top:12px">
+      <input type="number" id="weeklyGoalInput" min="0" step="10" value="${goalMin}" style="width:100px">
+      <span class="sub">分/週の目標</span>
+      <button class="btn btn-ghost" id="btnSaveWeeklyGoal">保存</button>
+    </div>
+  `;
+}
+
 function last7Days(){
   const arr = [];
   for(let i=6;i>=0;i--){
     const d = new Date();
     d.setDate(d.getDate()-i);
-    arr.push(d.toISOString().slice(0,10));
+    arr.push(dateToStr(d));
   }
   return arr;
 }
+function thisWeekRange(){
+  const now = new Date(todayStr()+'T00:00:00');
+  const dow = now.getDay(); // 0=Sun..6=Sat
+  const diffFromMonday = dow===0 ? 6 : dow-1;
+  const monday = new Date(now); monday.setDate(monday.getDate()-diffFromMonday);
+  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+  return { startStr: dateToStr(monday), endStr: dateToStr(sunday) };
+}
 const WEEKDAY_JP = ['日','月','火','水','木','金','土'];
+
+function buildCountdownHtml(){
+  const today = todayStr();
+  const sorted = [...countdowns].sort((a,b)=>a.date.localeCompare(b.date));
+  const upcoming = sorted.filter(c=>c.date>=today);
+  const heroId = upcoming.length>0 ? upcoming[0].id : null;
+
+  let heroHtml = '';
+  if(heroId){
+    const hero = sorted.find(c=>c.id===heroId);
+    const diff = Math.round((new Date(hero.date+'T00:00:00') - new Date(today+'T00:00:00'))/86400000);
+    heroHtml = `
+      <div class="cd-hero">
+        <div class="cd-hero-days">${diff===0 ? '今日' : `${diff}<span class="cd-hero-unit">日</span>`}</div>
+        <div class="cd-hero-title">${escapeHtml(hero.title)}</div>
+        <div class="cd-hero-date">${hero.date}</div>
+      </div>
+    `;
+  } else if(countdowns.length>0){
+    heroHtml = '<div class="empty" style="margin-bottom:10px">今後の予定はありません。</div>';
+  }
+
+  const listHtml = sorted.map(c=>{
+    const isPast = c.date < today;
+    const diff = Math.round((new Date(c.date+'T00:00:00') - new Date(today+'T00:00:00'))/86400000);
+    const dateDisplay = editingCountdownId===c.id
+      ? `<input type="date" class="cd-date-input" data-id="${c.id}" value="${c.date}">`
+      : `<span class="cd-item-date" data-toggle-edit="${c.id}">${c.date}${isPast?' ・ 終了':` ・ 残り${diff}日`}</span>`;
+    return `<div class="cd-item ${isPast?'past':''} ${c.id===heroId?'hero-item':''}">
+      <div class="cd-item-main">
+        <div class="cd-item-title">${escapeHtml(c.title)}</div>
+        ${dateDisplay}
+      </div>
+      <button class="cd-del" data-id="${c.id}" title="削除">✕</button>
+    </div>`;
+  }).join('') || '<div class="empty">まだアクティビティがありません。下から追加してください。</div>';
+
+  return { heroHtml, listHtml };
+}
 
 function renderProgress(){
   const sec = document.getElementById('sec-progress');
@@ -801,6 +920,8 @@ function renderProgress(){
     </div>`;
   }).join('') || '<div class="empty">まだ記録がありません。タイマーを使って学習を記録しましょう。</div>';
 
+  const { heroHtml, listHtml: countdownListHtml } = buildCountdownHtml();
+
   sec.innerHTML = `
     <div class="tape">進捗</div>
     <div class="sub">直近7日間の学習時間と、科目別の累計です</div>
@@ -808,14 +929,25 @@ function renderProgress(){
       <div class="chart-title">週間学習時間(分)</div>
       <div class="bars">${barsHtml}</div>
     </div>
-    <div class="heatmap-wrap">
-      <div class="chart-title">学習カレンダー(直近18週間)</div>
-      <div class="hm-cols">${buildHeatmapHtml(18)}</div>
-      <div class="hm-legend">少ない
-        <div class="hm-cell"></div><div class="hm-cell lvl1"></div><div class="hm-cell lvl2"></div><div class="hm-cell lvl3"></div><div class="hm-cell lvl4"></div>
-      多い</div>
+    <div class="chart-wrap">
+      <div class="chart-title">今週の目標</div>
+      ${buildWeeklyGoalHtml()}
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">時間配分（教科別）</div>
+      ${buildPieChartHtml()}
     </div>
     <div class="subject-list">${subjectRows}</div>
+    <div class="chart-wrap" style="margin-top:24px">
+      <div class="chart-title">カウントダウン</div>
+      ${heroHtml}
+      <div class="field-row">
+        <input type="text" id="cdTitle" placeholder="アクティビティ名（例：期末テスト）" style="flex:1;min-width:180px">
+        <input type="date" id="cdDate">
+        <button class="btn btn-start" id="btnAddCountdown">追加</button>
+      </div>
+      <div style="margin-top:14px">${countdownListHtml}</div>
+    </div>
     <div class="log-title">最近の記録</div>
     <div id="logList">${logHtml}</div>
   `;
@@ -823,6 +955,46 @@ function renderProgress(){
     btn.addEventListener('click', async ()=>{
       sessions = sessions.filter(s=>s.id!==btn.dataset.id);
       await saveKey('sessions', sessions);
+      renderProgress();
+    });
+  });
+  const btnSaveWeeklyGoal = document.getElementById('btnSaveWeeklyGoal');
+  if(btnSaveWeeklyGoal) btnSaveWeeklyGoal.addEventListener('click', async ()=>{
+    const val = parseInt(document.getElementById('weeklyGoalInput').value, 10);
+    settings.weeklyGoalMinutes = isNaN(val) || val<0 ? 0 : val;
+    await saveKey('settings', settings);
+    renderProgress();
+  });
+  const btnAddCountdown = document.getElementById('btnAddCountdown');
+  if(btnAddCountdown) btnAddCountdown.addEventListener('click', async ()=>{
+    const title = document.getElementById('cdTitle').value.trim();
+    const date = document.getElementById('cdDate').value;
+    if(!title || !date) return;
+    countdowns.push({id:uid(), title, date, createdAt:Date.now()});
+    await saveKey('countdowns', countdowns);
+    renderProgress();
+  });
+  sec.querySelectorAll('[data-toggle-edit]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      editingCountdownId = el.dataset.toggleEdit;
+      renderProgress();
+    });
+  });
+  sec.querySelectorAll('.cd-date-input').forEach(input=>{
+    input.addEventListener('change', async ()=>{
+      const c = countdowns.find(x=>x.id===input.dataset.id);
+      if(c && input.value){ c.date = input.value; await saveKey('countdowns', countdowns); }
+      editingCountdownId = null;
+      renderProgress();
+    });
+    input.addEventListener('blur', ()=>{
+      if(editingCountdownId===input.dataset.id){ editingCountdownId = null; renderProgress(); }
+    });
+  });
+  sec.querySelectorAll('.cd-del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      countdowns = countdowns.filter(c=>c.id!==btn.dataset.id);
+      await saveKey('countdowns', countdowns);
       renderProgress();
     });
   });
@@ -1105,12 +1277,16 @@ function renderGoals(){
 function renderCards(){
   const sec = document.getElementById('sec-cards');
   const options = subjects.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-  const pool = flashcards.filter(c=>!c.memorized);
-  const memorizedCount = flashcards.length - pool.length;
+  const pool = flashcards.filter(c=>!c.memorized && !c.archived);
+  const memorizedCount = flashcards.filter(c=>!c.archived && c.memorized).length;
+  const activeTotal = flashcards.filter(c=>!c.archived).length;
+  const archivedCount = flashcards.length - activeTotal;
 
   let reviewHtml;
-  if(flashcards.length===0){
-    reviewHtml = '<div class="empty">まだ単語がありません。下のフォームから追加してください。</div>';
+  if(activeTotal===0){
+    reviewHtml = flashcards.length===0
+      ? '<div class="empty">まだ単語がありません。下のフォームから追加してください。</div>'
+      : '<div class="empty">すべてのカードがアーカイブされています。アーカイブ済みのカードを復元すると復習できます。</div>';
   } else if(pool.length===0){
     reviewHtml = `<div class="empty">🎉 すべて覚えました！お疲れさまでした。</div>
       <div style="text-align:center"><button class="btn btn-ghost" id="btnResetCards">もう一度復習する</button></div>`;
@@ -1134,13 +1310,24 @@ function renderCards(){
     `;
   }
 
-  const listHtml = flashcards.map(c=>{
+  // Selection can only reference currently visible cards
+  const visibleCards = showArchivedCards ? flashcards : flashcards.filter(c=>!c.archived);
+  const visibleIds = new Set(visibleCards.map(c=>c.id));
+  [...cardSelection].forEach(id=>{ if(!visibleIds.has(id)) cardSelection.delete(id); });
+  const allSelected = visibleCards.length>0 && visibleCards.every(c=>cardSelection.has(c.id));
+
+  const listHtml = visibleCards.map(c=>{
     const subj = subjectById(c.subjectId);
-    return `<div class="card-item">
-      <div><strong>${escapeHtml(c.term)}</strong> <span style="color:var(--ink-soft)">— ${escapeHtml(c.meaning)}</span>${subj?` <span style="color:var(--ink-soft);font-size:11px">(${escapeHtml(subj.name)})</span>`:''}</div>
-      <div style="display:flex;align-items:center;gap:10px">
+    return `<div class="card-item ${c.archived?'archived':''}">
+      <div class="card-main">
+        <input type="checkbox" class="card-select" data-id="${c.id}" ${cardSelection.has(c.id)?'checked':''}>
+        <div class="card-text"><strong>${escapeHtml(c.term)}</strong> <span style="color:var(--ink-soft)">— ${escapeHtml(c.meaning)}</span>${subj?` <span style="color:var(--ink-soft);font-size:11px">(${escapeHtml(subj.name)})</span>`:''}</div>
+      </div>
+      <div class="card-actions">
         <span class="badge ${c.memorized?'memo':'pending'}">${c.memorized?'習得済み':'未習得'}</span>
+        ${c.archived?'<span class="badge archived-badge">アーカイブ済み</span>':''}
         <button class="btn btn-ghost" data-toggle="${c.id}" style="padding:4px 12px;font-size:12px">${c.memorized?'未習得に戻す':'習得済みにする'}</button>
+        <button class="btn btn-ghost" data-archive="${c.id}" style="padding:4px 12px;font-size:12px">${c.archived?'復元':'アーカイブ'}</button>
         <button class="del" data-id="${c.id}" title="削除">✕</button>
       </div>
     </div>`;
@@ -1148,7 +1335,7 @@ function renderCards(){
 
   sec.innerHTML = `
     <div class="tape">単語帳</div>
-    <div class="sub">カードをタップしてめくり、覚えたかどうかを記録しましょう ・ 習得済み ${memorizedCount}/${flashcards.length}</div>
+    <div class="sub">カードをタップしてめくり、覚えたかどうかを記録しましょう ・ 習得済み ${memorizedCount}/${activeTotal}${archivedCount>0?` ・ アーカイブ ${archivedCount}件`:''}</div>
     <div class="chart-wrap" style="margin-bottom:24px">${reviewHtml}</div>
     <div class="add-form">
       <input type="text" id="cardTerm" placeholder="表 (単語・問題)">
@@ -1156,7 +1343,17 @@ function renderCards(){
       <select id="cardSubject"><option value="">(科目未設定)</option>${options}</select>
       <button class="btn btn-start" id="btnAddCard">追加</button>
     </div>
-    <div class="log-title">カード一覧</div>
+    <div class="cards-toolbar">
+      <div class="log-title">カード一覧</div>
+      <label><input type="checkbox" id="chkShowArchived" ${showArchivedCards?'checked':''}> アーカイブ済みも表示</label>
+    </div>
+    <div class="bulk-bar">
+      <label><input type="checkbox" id="chkSelectAll" ${visibleCards.length===0?'disabled':''} ${allSelected?'checked':''}> すべて選択</label>
+      <span class="sub">${cardSelection.size}件選択中</span>
+      <button class="btn btn-ghost" id="btnBulkArchive" ${cardSelection.size===0?'disabled':''}>選択をアーカイブ</button>
+      <button class="btn btn-ghost" id="btnBulkUnarchive" ${cardSelection.size===0?'disabled':''}>アーカイブ解除</button>
+      <button class="del-bulk" id="btnBulkDelete" ${cardSelection.size===0?'disabled':''}>選択したカードを削除</button>
+    </div>
     ${listHtml || '<div class="empty">カードがまだありません。</div>'}
   `;
 
@@ -1184,7 +1381,7 @@ function renderCards(){
   const btnKnown = document.getElementById('btnKnown');
   if(btnKnown) btnKnown.addEventListener('click', async (e)=>{
     e.stopPropagation();
-    const poolNow = flashcards.filter(c=>!c.memorized);
+    const poolNow = flashcards.filter(c=>!c.memorized && !c.archived);
     const card = poolNow[cardState.idx];
     if(card){ card.memorized = true; await saveKey('flashcards', flashcards); }
     cardState.flipped = false;
@@ -1196,9 +1393,56 @@ function renderCards(){
       if(c){ c.memorized = !c.memorized; await saveKey('flashcards', flashcards); renderCards(); }
     });
   });
+  sec.querySelectorAll('[data-archive]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const c = flashcards.find(x=>x.id===btn.dataset.archive);
+      if(c){ c.archived = !c.archived; await saveKey('flashcards', flashcards); renderCards(); }
+    });
+  });
+  sec.querySelectorAll('.card-select').forEach(chk=>{
+    chk.addEventListener('change', ()=>{
+      if(chk.checked) cardSelection.add(chk.dataset.id);
+      else cardSelection.delete(chk.dataset.id);
+      renderCards();
+    });
+  });
+  const chkSelectAll = document.getElementById('chkSelectAll');
+  if(chkSelectAll) chkSelectAll.addEventListener('change', ()=>{
+    if(chkSelectAll.checked) visibleCards.forEach(c=>cardSelection.add(c.id));
+    else visibleCards.forEach(c=>cardSelection.delete(c.id));
+    renderCards();
+  });
+  const chkShowArchived = document.getElementById('chkShowArchived');
+  if(chkShowArchived) chkShowArchived.addEventListener('change', ()=>{
+    showArchivedCards = chkShowArchived.checked;
+    renderCards();
+  });
+  const btnBulkArchive = document.getElementById('btnBulkArchive');
+  if(btnBulkArchive) btnBulkArchive.addEventListener('click', async ()=>{
+    flashcards.forEach(c=>{ if(cardSelection.has(c.id)) c.archived = true; });
+    await saveKey('flashcards', flashcards);
+    cardSelection.clear();
+    renderCards();
+  });
+  const btnBulkUnarchive = document.getElementById('btnBulkUnarchive');
+  if(btnBulkUnarchive) btnBulkUnarchive.addEventListener('click', async ()=>{
+    flashcards.forEach(c=>{ if(cardSelection.has(c.id)) c.archived = false; });
+    await saveKey('flashcards', flashcards);
+    cardSelection.clear();
+    renderCards();
+  });
+  const btnBulkDelete = document.getElementById('btnBulkDelete');
+  if(btnBulkDelete) btnBulkDelete.addEventListener('click', async ()=>{
+    if(cardSelection.size===0) return;
+    if(!confirm(`選択した${cardSelection.size}件のカードを削除します。よろしいですか？`)) return;
+    flashcards = flashcards.filter(c=>!cardSelection.has(c.id));
+    cardSelection.clear();
+    await saveKey('flashcards', flashcards);
+    renderCards();
+  });
   const btnReset = document.getElementById('btnResetCards');
   if(btnReset) btnReset.addEventListener('click', async ()=>{
-    flashcards.forEach(c=>c.memorized=false);
+    flashcards.forEach(c=>{ if(!c.archived) c.memorized=false; });
     await saveKey('flashcards', flashcards);
     cardState = {idx:0, flipped:false};
     renderCards();
@@ -1208,13 +1452,14 @@ function renderCards(){
     const meaning = document.getElementById('cardMeaning').value.trim();
     const subjectId = document.getElementById('cardSubject').value || null;
     if(!term || !meaning) return;
-    flashcards.push({id:uid(), term, meaning, subjectId, memorized:false, createdAt:Date.now()});
+    flashcards.push({id:uid(), term, meaning, subjectId, memorized:false, archived:false, createdAt:Date.now()});
     await saveKey('flashcards', flashcards);
     renderCards();
   });
   sec.querySelectorAll('.del').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       flashcards = flashcards.filter(c=>c.id!==btn.dataset.id);
+      cardSelection.delete(btn.dataset.id);
       await saveKey('flashcards', flashcards);
       renderCards();
     });
@@ -1448,8 +1693,11 @@ function renderSchedule(){
 
   const groups = {};
   schedule.forEach(t=>{ (groups[t.date] = groups[t.date]||[]).push(t); });
-  const dates = Object.keys(groups).sort().reverse();
   const today = todayStr();
+  let dates = Object.keys(groups).sort().reverse();
+  if(groups[today]){
+    dates = [today, ...dates.filter(d=>d!==today)];
+  }
 
   const groupsHtml = dates.map(date=>{
     const items = groups[date].sort((a,b)=>{
@@ -1678,8 +1926,8 @@ function renderSettings(){
     if(!confirm('本当にすべてのデータを削除しますか？この操作は取り消せません。')) return;
     subjects = []; sessions = []; schedule = [];
     goals = []; goalLogs = []; flashcards = []; reflections = [];
-    tests = []; testEntries = [];
-    settings = {dailyGoalMinutes:60, lastRecipientEmail:''};
+    tests = []; testEntries = []; countdowns = [];
+    settings = {dailyGoalMinutes:60, lastRecipientEmail:'', weeklyGoalMinutes:300};
     await saveKey('subjects', subjects);
     await saveKey('sessions', sessions);
     await saveKey('schedule', schedule);
@@ -1689,6 +1937,7 @@ function renderSettings(){
     await saveKey('reflections', reflections);
     await saveKey('tests', tests);
     await saveKey('testEntries', testEntries);
+    await saveKey('countdowns', countdowns);
     await saveKey('settings', settings);
     renderSettings(); renderTimer();
   });
@@ -1696,7 +1945,7 @@ function renderSettings(){
 
 function exportData(){
   const data = {
-    subjects, sessions, schedule, goals, goalLogs, flashcards, reflections, tests, testEntries, settings,
+    subjects, sessions, schedule, goals, goalLogs, flashcards, reflections, tests, testEntries, countdowns, settings,
     exportedAt: new Date().toISOString()
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
@@ -1729,7 +1978,8 @@ async function importDataFile(file){
   reflections = data.reflections || [];
   tests = data.tests || [];
   testEntries = data.testEntries || [];
-  settings = data.settings || {dailyGoalMinutes:60, lastRecipientEmail:''};
+  countdowns = data.countdowns || [];
+  settings = data.settings || {dailyGoalMinutes:60, lastRecipientEmail:'', weeklyGoalMinutes:300};
   await saveKey('subjects', subjects);
   await saveKey('sessions', sessions);
   await saveKey('schedule', schedule);
@@ -1739,6 +1989,7 @@ async function importDataFile(file){
   await saveKey('reflections', reflections);
   await saveKey('tests', tests);
   await saveKey('testEntries', testEntries);
+  await saveKey('countdowns', countdowns);
   await saveKey('settings', settings);
   alert('読み込みが完了しました');
   renderSettings();
