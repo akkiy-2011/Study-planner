@@ -18,12 +18,96 @@
   --sienna:#C1440E;
   --forest:#3F6C51;
   --gold:#B98900;
+  --gold-dark:#d99a1f;
   --plum:#7B4B94;
   --teal:#1F7A6C;
   --rose:#A2475A;
   --sky:#2E6E8E;
+  --surface:#fff;
+  --tab-inactive-bg:#E2DFCF;
+  --tape-bg:#E9E4C9;
+  --tape-highlight:rgba(255,255,255,.5);
   --tab-w:196px;
 }
+
+/* ---- Themes ---- */
+[data-theme="dark"]{
+  --paper:#1E1D1A;
+  --paper-2:#26241F;
+  --line:rgba(255,255,255,0.12);
+  --margin-red:#E2764A;
+  --ink:#EDEAE0;
+  --ink-soft:#A6A296;
+  --indigo:#8B9BD6;
+  --indigo-l:#5E6FA8;
+  --sienna:#E2764A;
+  --forest:#6FAE84;
+  --gold:#E0B23D;
+  --gold-dark:#B98A2A;
+  --plum:#B183CC;
+  --teal:#4FB6A4;
+  --rose:#D383A0;
+  --sky:#6FB0D6;
+  --surface:#2E2C27;
+  --tab-inactive-bg:#2A2924;
+  --tape-bg:#33312A;
+  --tape-highlight:rgba(255,255,255,0.06);
+}
+[data-theme="pop"]{
+  --paper:#FFF7EC;
+  --paper-2:#FFFFFF;
+  --line:rgba(108,92,231,0.16);
+  --margin-red:#FF6B6B;
+  --ink:#2B2640;
+  --ink-soft:#8579A6;
+  --indigo:#6C5CE7;
+  --indigo-l:#A29BFE;
+  --sienna:#FF6B6B;
+  --forest:#00B894;
+  --gold:#FDA63F;
+  --gold-dark:#E08A20;
+  --plum:#E84393;
+  --teal:#00CEC9;
+  --rose:#FF7AA2;
+  --sky:#3FA7FF;
+  --surface:#FFFFFF;
+  --tab-inactive-bg:#F1E9FF;
+  --tape-bg:#FFE1EF;
+  --tape-highlight:rgba(255,255,255,.7);
+}
+[data-theme="contrast"]{
+  --paper:#FFFFFF;
+  --paper-2:#FFFFFF;
+  --line:#000000;
+  --margin-red:#CC0000;
+  --ink:#000000;
+  --ink-soft:#000000;
+  --indigo:#0033CC;
+  --indigo-l:#0033CC;
+  --sienna:#CC0000;
+  --forest:#006600;
+  --gold:#7A5900;
+  --gold-dark:#5C4300;
+  --plum:#660099;
+  --teal:#006666;
+  --rose:#99003D;
+  --sky:#003D80;
+  --surface:#FFFFFF;
+  --tab-inactive-bg:#E0E0E0;
+  --tape-bg:#FFFFFF;
+  --tape-highlight:transparent;
+}
+[data-theme="contrast"] .chart-wrap,
+[data-theme="contrast"] .task-item,
+[data-theme="contrast"] .card-item,
+[data-theme="contrast"] select,
+[data-theme="contrast"] input[type=text],
+[data-theme="contrast"] input[type=number],
+[data-theme="contrast"] input[type=date],
+[data-theme="contrast"] input[type=email]{
+  border-width:2px;
+}
+[data-theme="contrast"] .panel::before{ opacity:1; }
 *{box-sizing:border-box;}
 body{
   margin:0;
@@ -61,7 +145,7 @@ body{
   gap:10px;
   padding:14px 16px;
   border:none;
-  background:#E2DFCF;
+  background:var(--tab-inactive-bg);
   color:var(--ink-soft);
   font-family:'Zen Kaku Gothic New',sans-serif;
   font-weight:700;
@@ -116,7 +200,7 @@ body{
   font-weight:700;
   font-size:26px;
   color:var(--ink);
-  background:linear-gradient(100deg, transparent 0%, rgba(255,255,255,.5) 40%, transparent 100%), #E9E4C9;
+  background:linear-gradient(100deg, transparent 0%, var(--tape-highlight) 40%, transparent 100%), var(--tape-bg);
   padding:6px 22px;
   transform:rotate(-1.2deg);
   box-shadow:0 2px 4px rgba(0,0,0,0.08);
@@ -151,7 +235,7 @@ select, input[type=text], input[type=number], input[type=date], input[type=email
   padding:9px 12px;
   border:1px solid var(--line);
   border-radius:8px;
-  background:#fff;
+  background:var(--surface);
   color:var(--ink);
 }
 .btn{
@@ -323,6 +407,19 @@ input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); curso
 .custom-color-wrap input[type=color]::-webkit-color-swatch{ border:none; }
 .custom-color-wrap input[type=color]::-moz-color-swatch{ border:none; }
 .danger-zone{ border:1px solid var(--sienna); border-radius:10px; padding:16px 20px; background:rgba(193,68,14,0.05); }
+
+/* ---- Theme picker ---- */
+.theme-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.theme-option{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  background:none; border:2px solid transparent; border-radius:12px; padding:10px;
+  cursor:pointer; width:92px; font-family:'Zen Kaku Gothic New',sans-serif;
+}
+.theme-option:hover{ background:var(--paper); }
+.theme-option.active{ border-color:var(--indigo); background:var(--paper); }
+.theme-preview{ width:48px; height:48px; border-radius:50%; border:1px solid var(--line); box-shadow:0 1px 3px rgba(0,0,0,0.12); flex-shrink:0; }
+.theme-option-label{ font-size:12px; color:var(--ink); text-align:center; line-height:1.3; }
+.theme-custom-picker{ margin-top:14px; }
 .danger-zone p{ font-size:12.5px; color:var(--ink-soft); margin:0 0 10px; }
 
 /* ---- Goals ---- */
@@ -396,7 +493,7 @@ input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); curso
 .cd-hero-row{ display:flex; align-items:center; gap:18px; padding-bottom:18px; border-bottom:1px solid var(--line); margin-bottom:14px; }
 .cd-hero-box{
   width:88px; height:88px; border-radius:16px; flex-shrink:0;
-  background:linear-gradient(155deg, var(--gold), #d99a1f);
+  background:linear-gradient(155deg, var(--gold), var(--gold-dark));
   display:flex; align-items:center; justify-content:center;
   color:#fff; font-size:30px; font-weight:800; font-family:'JetBrains Mono',monospace;
   box-shadow:0 4px 14px rgba(184,137,0,0.28);
@@ -478,7 +575,7 @@ input[type=checkbox]{ width:17px; height:17px; accent-color:var(--forest); curso
 /* ---- Reflect (diary / class review) ---- */
 textarea{
   font-family:'Zen Kaku Gothic New',sans-serif; font-size:14px; padding:10px 12px;
-  border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink);
+  border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink);
   width:100%; resize:vertical; min-height:76px;
 }
 .reflect-item{ background:var(--paper); border-radius:10px; padding:14px 16px; margin-bottom:10px; }
@@ -522,6 +619,13 @@ const SUBJECT_COLORS = [
   {name:'青緑', hex:'#1F7A6C'},
 ];
 
+const THEME_PREVIEWS = {
+  default: {paper:'#EDEFE5', accent:'#2B3A67', label:'デフォルト'},
+  dark:    {paper:'#1E1D1A', accent:'#8B9BD6', label:'ダーク'},
+  pop:     {paper:'#FFF7EC', accent:'#6C5CE7', label:'ポップ'},
+  contrast:{paper:'#FFFFFF', accent:'#0033CC', label:'ハイコントラスト'},
+};
+
 let subjects = [];
 let sessions = [];   // {id, subjectId, date:'YYYY-MM-DD', durationSec, createdAt}
 let schedule = [];   // {id, date, subjectId, title, done}
@@ -538,7 +642,7 @@ let showArchivedCards = false;
 let countdowns = []; // {id, title, date, createdAt}
 let editingCountdownId = null;
 let reflections = []; // {id, type:'diary'|'class', date, mood, subjectId, understanding, content, createdAt}
-let settings = { dailyGoalMinutes: 60, lastRecipientEmail: '', weeklyGoalMinutes: 300 };
+let settings = { dailyGoalMinutes: 60, lastRecipientEmail: '', weeklyGoalMinutes: 300, theme: 'default', customThemeColor: '#2B3A67' };
 
 let timerState = { running:false, startedAt:null, elapsedMs:0, subjectId:null };
 let timerInterval = null;
@@ -613,9 +717,34 @@ async function loadAll(){
   testEntries = await loadKey('testEntries', []);
   flashcards = await loadKey('flashcards', []);
   reflections = await loadKey('reflections', []);
-  settings = await loadKey('settings', {dailyGoalMinutes:60, lastRecipientEmail:'', weeklyGoalMinutes:300});
+  settings = await loadKey('settings', {dailyGoalMinutes:60, lastRecipientEmail:'', weeklyGoalMinutes:300, theme:'default', customThemeColor:'#2B3A67'});
   if(settings.weeklyGoalMinutes === undefined) settings.weeklyGoalMinutes = 300;
+  if(settings.theme === undefined) settings.theme = 'default';
+  if(settings.customThemeColor === undefined) settings.customThemeColor = '#2B3A67';
   countdowns = await loadKey('countdowns', []);
+  applyTheme();
+}
+
+function lightenHex(hex, amt){
+  const n = parseInt(hex.replace('#',''),16);
+  let r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  r = Math.round(r + (255-r)*amt);
+  g = Math.round(g + (255-g)*amt);
+  b = Math.round(b + (255-b)*amt);
+  return '#'+[r,g,b].map(x=>Math.max(0,Math.min(255,x)).toString(16).padStart(2,'0')).join('');
+}
+
+function applyTheme(){
+  const theme = settings.theme || 'default';
+  document.documentElement.setAttribute('data-theme', theme);
+  if(theme === 'custom'){
+    const c = settings.customThemeColor || '#2B3A67';
+    document.documentElement.style.setProperty('--indigo', c);
+    document.documentElement.style.setProperty('--indigo-l', lightenHex(c, 0.35));
+  } else {
+    document.documentElement.style.removeProperty('--indigo');
+    document.documentElement.style.removeProperty('--indigo-l');
+  }
 }
 
 function subjectById(id){ return subjects.find(s=>s.id===id); }
@@ -1896,9 +2025,11 @@ function renderSchedule(){
 
 /* ---------------- Settings ---------------- */
 let pendingColor = SUBJECT_COLORS[0].hex;
+let pendingThemeColor = null;
 
 function renderSettings(){
   const sec = document.getElementById('sec-settings');
+  if(pendingThemeColor === null) pendingThemeColor = settings.customThemeColor || '#2B3A67';
   const rows = subjects.map(s=>`
     <div class="subject-edit-row">
       <span class="chip" style="width:14px;height:14px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0"></span>
@@ -1911,9 +2042,38 @@ function renderSettings(){
     + `<div class="palette-divider"></div>`
     + `<div class="custom-color-wrap ${!isTemplateColor?'selected':''}"><input type="color" id="customColor" value="${pendingColor}" title="カラーピッカーで選択"></div>`;
 
+  const currentTheme = settings.theme || 'default';
+  const themeGrid = Object.entries(THEME_PREVIEWS).map(([key, t])=>`
+    <button class="theme-option ${currentTheme===key?'active':''}" data-theme-choice="${key}">
+      <span class="theme-preview" style="background:linear-gradient(135deg, ${t.paper} 50%, ${t.accent} 50%)"></span>
+      <span class="theme-option-label">${t.label}</span>
+    </button>
+  `).join('') + `
+    <button class="theme-option ${currentTheme==='custom'?'active':''}" data-theme-choice="custom">
+      <span class="theme-preview" style="background:${settings.customThemeColor||pendingThemeColor}"></span>
+      <span class="theme-option-label">カラー選択</span>
+    </button>
+  `;
+
+  const isTemplateThemeColor = SUBJECT_COLORS.some(c=>c.hex===pendingThemeColor);
+  const themePalette = SUBJECT_COLORS.map(c=>`<div class="swatch ${c.hex===pendingThemeColor?'selected':''}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.name}"></div>`).join('')
+    + `<div class="palette-divider"></div>`
+    + `<div class="custom-color-wrap ${!isTemplateThemeColor?'selected':''}"><input type="color" id="themeCustomColor" value="${pendingThemeColor}" title="カラーピッカーで選択"></div>`;
+
   sec.innerHTML = `
     <div class="tape">設定</div>
     <div class="sub">科目・目標時間などを管理します</div>
+
+    <div class="settings-block">
+      <h3>テーマ</h3>
+      <div class="theme-grid">${themeGrid}</div>
+      ${currentTheme==='custom' ? `
+        <div class="theme-custom-picker">
+          <div class="sub" style="margin:0 0 8px 4px">アクセントカラーを選択してください</div>
+          <div class="palette" id="themePalette">${themePalette}</div>
+        </div>
+      ` : ''}
+    </div>
 
     <div class="settings-block">
       <h3>科目一覧</h3>
@@ -1968,6 +2128,38 @@ function renderSettings(){
     pendingColor = e.target.value;
     renderSettings();
   });
+  sec.querySelectorAll('[data-theme-choice]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const choice = btn.dataset.themeChoice;
+      settings.theme = choice;
+      if(choice === 'custom'){
+        if(!settings.customThemeColor) settings.customThemeColor = '#2B3A67';
+        pendingThemeColor = settings.customThemeColor;
+      }
+      await saveKey('settings', settings);
+      applyTheme();
+      renderSettings();
+    });
+  });
+  const themePaletteEl = document.getElementById('themePalette');
+  if(themePaletteEl){
+    themePaletteEl.querySelectorAll('.swatch').forEach(sw=>{
+      sw.addEventListener('click', async ()=>{
+        pendingThemeColor = sw.dataset.hex;
+        settings.customThemeColor = pendingThemeColor;
+        await saveKey('settings', settings);
+        applyTheme();
+        renderSettings();
+      });
+    });
+    document.getElementById('themeCustomColor').addEventListener('change', async (e)=>{
+      pendingThemeColor = e.target.value;
+      settings.customThemeColor = pendingThemeColor;
+      await saveKey('settings', settings);
+      applyTheme();
+      renderSettings();
+    });
+  }
   document.getElementById('btnAddSubject').addEventListener('click', async ()=>{
     const input = document.getElementById('newSubjectName');
     const name = input.value.trim();
@@ -2006,7 +2198,8 @@ function renderSettings(){
     subjects = []; sessions = []; schedule = [];
     goals = []; goalLogs = []; flashcards = []; reflections = [];
     tests = []; testEntries = []; countdowns = [];
-    settings = {dailyGoalMinutes:60, lastRecipientEmail:'', weeklyGoalMinutes:300};
+    settings = {dailyGoalMinutes:60, lastRecipientEmail:'', weeklyGoalMinutes:300, theme:'default', customThemeColor:'#2B3A67'};
+    pendingThemeColor = null;
     await saveKey('subjects', subjects);
     await saveKey('sessions', sessions);
     await saveKey('schedule', schedule);
@@ -2018,6 +2211,7 @@ function renderSettings(){
     await saveKey('testEntries', testEntries);
     await saveKey('countdowns', countdowns);
     await saveKey('settings', settings);
+    applyTheme();
     renderSettings(); renderTimer();
   });
 }
@@ -2058,7 +2252,10 @@ async function importDataFile(file){
   tests = data.tests || [];
   testEntries = data.testEntries || [];
   countdowns = data.countdowns || [];
-  settings = data.settings || {dailyGoalMinutes:60, lastRecipientEmail:'', weeklyGoalMinutes:300};
+  settings = data.settings || {dailyGoalMinutes:60, lastRecipientEmail:'', weeklyGoalMinutes:300, theme:'default', customThemeColor:'#2B3A67'};
+  if(settings.theme === undefined) settings.theme = 'default';
+  if(settings.customThemeColor === undefined) settings.customThemeColor = '#2B3A67';
+  pendingThemeColor = null;
   await saveKey('subjects', subjects);
   await saveKey('sessions', sessions);
   await saveKey('schedule', schedule);
@@ -2070,6 +2267,7 @@ async function importDataFile(file){
   await saveKey('testEntries', testEntries);
   await saveKey('countdowns', countdowns);
   await saveKey('settings', settings);
+  applyTheme();
   alert('読み込みが完了しました');
   renderSettings();
   renderTimer();
